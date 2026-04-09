@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  frontend-mm:
+    build: .
+    container_name: frontend-mm
+    ports:
+      - "9086:80"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8086
+      VITE_REQUEST_TIMEOUT_MS: 10000
+      VITE_USE_MOCK_API: false
+      VITE_GOOGLE_CLIENT_ID: 180052414214-n2vr9rg78t1qkccg68bd7sioh5up6a3c.apps.googleusercontent.com
+      VITE_TELEGRAM_BOT_NAME: var_vadhu_khoj_bot
+      VITE_PORT: 80

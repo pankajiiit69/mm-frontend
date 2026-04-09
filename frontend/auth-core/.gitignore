@@ -1,0 +1,7 @@
+/dist
+/build
+
+# ── Dependencies ──────────────────────────────────────────────────────────────
+/node_modules
+# npm registry config (machine-specific, do not commit)
+.npmrc

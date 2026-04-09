@@ -1,0 +1,19 @@
+{
+  "name": "fruzoos-frontend-workspace",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "auth-core",
+    "frontend-fz"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w frontend-fz",
+    "watch:auth-core": "npm run watch -w auth-core",
+    "build:auth-core": "npm run build -w auth-core",
+    "build:app": "npm run build -w frontend-fz",
+    "build": "npm run build:auth-core && npm run build:app",
+    "build:mm": "npm run build --prefix frontend-mm",
+    "clean:all": "rm -rf auth-core/dist frontend-fz/dist frontend-mm/dist && find auth-core frontend-fz frontend-mm -maxdepth 1 -name '*.tsbuildinfo' -type f -delete",
+    "rebuild:all": "npm run clean:all && npm run build:auth-core && npm run build:app && npm run build:mm"
+  }
+}
