@@ -1,0 +1,1182 @@
+openapi: 3.0.3
+info:
+  title: Fruzoos Juice Store API
+  version: 1.0.0
+  description: |
+    Day 6 frozen API contract for frontend and backend alignment.
+    Scope includes core APIs plus admin orders and admin dashboard endpoints.
+servers:
+  - url: http://localhost:8080
+    description: Local backend
+
+tags:
+  - name: Products
+  - name: Cart
+  - name: Orders
+  - name: Admin
+  - name: UserProfile
+  - name: Health
+
+paths:
+  /api/products:
+    get:
+      tags:
+        - Products
+      summary: List products with search, filter, sort, and pagination
+      operationId: listProducts
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - in: query
+          name: query
+          schema:
+            type: string
+            maxLength: 100
+          description: Search by product name or fruit type
+        - in: query
+          name: category
+          schema:
+            $ref: '#/components/schemas/ProductCategory'
+        - in: query
+          name: minPrice
+          schema:
+            type: number
+            format: double
+            minimum: 0
+        - in: query
+          name: maxPrice
+          schema:
+            type: number
+            format: double
+            minimum: 0
+        - in: query
+          name: sizeMl
+          schema:
+            type: integer
+            minimum: 50
+        - in: query
+          name: availabilityOnly
+          schema:
+            type: boolean
+            default: false
+        - in: query
+          name: sortBy
+          schema:
+            $ref: '#/components/schemas/ProductSortBy'
+      responses:
+        '200':
+          description: Product page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessProductPageResponse'
+
+  /api/products/{productId}:
+    get:
+      tags:
+        - Products
+      summary: Get product details by id
+      operationId: getProductById
+      parameters:
+        - $ref: '#/components/parameters/ProductIdPath'
+      responses:
+        '200':
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessProductResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/cart:
+    get:
+      tags:
+        - Cart
+      summary: Get authenticated user's cart
+      operationId: getCart
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cart fetched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessCartResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    delete:
+      tags: [Cart]
+      summary: Clear authenticated user's cart
+      operationId: clearCart
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cart cleared
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessCartResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/cart/items:
+    post:
+      tags:
+        - Cart
+      summary: Add item to cart
+      operationId: addCartItem
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCartItemRequest'
+      responses:
+        '200':
+          description: Item added to cart
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessCartResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/cart/items/{cartItemId}:
+    patch:
+      tags:
+        - Cart
+      summary: Update cart item quantity
+      operationId: updateCartItemQuantity
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: cartItemId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCartItemRequest'
+      responses:
+        '200':
+          description: Cart updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessCartResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Cart
+      summary: Remove an item from cart
+      operationId: removeCartItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: cartItemId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessCartResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/orders:
+    post:
+      tags:
+        - Orders
+      summary: Place order from current cart
+      operationId: placeOrder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaceOrderRequest'
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    get:
+      tags:
+        - Orders
+      summary: Get authenticated user's orders
+      operationId: listMyOrders
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+        - in: query
+          name: sortBy
+          schema:
+            $ref: '#/components/schemas/OrderSortBy'
+      responses:
+        '200':
+          description: Orders page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessOrderPageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/orders/{orderId}:
+    get:
+      tags:
+        - Orders
+      summary: Get a specific order owned by current user
+      operationId: getMyOrderById
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessOrderResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/admin/orders:
+    get:
+      tags:
+        - Admin
+      summary: Get all orders for admin management
+      operationId: listAllOrders
+      description: Requires ADMIN role.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+        - in: query
+          name: userId
+          schema:
+            type: string
+        - in: query
+          name: fromDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: toDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: sortBy
+          schema:
+            $ref: '#/components/schemas/AdminOrderSortBy'
+      responses:
+        '200':
+          description: Admin order page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessOrderPageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/admin/orders/{orderId}/status:
+    patch:
+      tags:
+        - Admin
+      summary: Update an order status as admin
+      operationId: updateOrderStatusAsAdmin
+      description: Requires ADMIN role.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUpdateOrderStatusRequest'
+      responses:
+        '200':
+          description: Order status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessOrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/admin/dashboard/summary:
+    get:
+      tags:
+        - Admin
+      summary: Get sales summary for date range
+      operationId: getAdminSalesSummary
+      description: Requires ADMIN role.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: fromDate
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: toDate
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Sales summary returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessAdminSalesSummaryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/admin/dashboard/top-products:
+    get:
+      tags:
+        - Admin
+      summary: Get top-selling products for date range
+      operationId: getAdminTopProducts
+      description: Requires ADMIN role.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: fromDate
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: toDate
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 5
+      responses:
+        '200':
+          description: Top products returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessAdminTopProductsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/admin/dashboard/low-stock:
+    get:
+      tags:
+        - Admin
+      summary: Get low inventory alerts
+      operationId: getAdminLowStock
+      description: Requires ADMIN role.
+      x-roles: [ADMIN]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: threshold
+          schema:
+            type: integer
+            minimum: 0
+            default: 10
+      responses:
+        '200':
+          description: Low inventory list returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessAdminLowStockResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/users/profile/extended/me:
+    get:
+      tags: [UserProfile]
+      summary: Get extended profile (bio, address, professional details)
+      operationId: getMyExtendedProfile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Extended profile fetched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessExtendedProfileResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    patch:
+      tags: [UserProfile]
+      summary: Update extended profile (bio, address, professional details)
+      operationId: updateMyExtendedProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExtendedProfileRequest'
+      responses:
+        '200':
+          description: Extended profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessExtendedProfileResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /actuator/health:
+    get:
+      tags: [Health]
+      summary: Health probe endpoint
+      operationId: health
+      responses:
+        '200':
+          description: Service health
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessHealthResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PageParam:
+      in: query
+      name: page
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    SizeParam:
+      in: query
+      name: size
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+    ProductIdPath:
+      in: path
+      name: productId
+      required: true
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalidInput:
+              value:
+                timestamp: "2026-03-13T12:11:00Z"
+                status: 400
+                errorCode: "VALIDATION_ERROR"
+                message: "Invalid request payload"
+                path: "/api/auth/register"
+                details:
+                  - "email must be a valid email"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            unauthorized:
+              value:
+                timestamp: "2026-03-13T12:11:00Z"
+                status: 401
+                errorCode: "UNAUTHORIZED"
+                message: "Authentication required"
+                path: "/api/orders"
+                details: []
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            forbidden:
+              value:
+                timestamp: "2026-03-13T12:11:00Z"
+                status: 403
+                errorCode: "FORBIDDEN"
+                message: "Access denied"
+                path: "/api/orders/ord-1"
+                details: []
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            notFound:
+              value:
+                timestamp: "2026-03-13T12:11:00Z"
+                status: 404
+                errorCode: "NOT_FOUND"
+                message: "Resource not found"
+                path: "/api/products/unknown"
+                details: []
+
+  schemas:
+    Role:
+      type: string
+      enum: [ADMIN, USER]
+
+    ProductCategory:
+      type: string
+      enum: [CITRUS, TROPICAL, MIXED, DETOX, SEASONAL]
+
+    ProductSortBy:
+      type: string
+      enum: [NEWEST, NAME, PRICE_ASC, PRICE_DESC]
+
+    OrderSortBy:
+      type: string
+      enum: [NEWEST, AMOUNT]
+
+    AdminOrderSortBy:
+      type: string
+      enum: [NEWEST, AMOUNT, STATUS]
+
+    OrderStatus:
+      type: string
+      enum: [PLACED, CONFIRMED, PREPARING, DISPATCHED, DELIVERED, CANCELLED]
+
+    PaymentMethod:
+      type: string
+      enum: [COD, CARD, UPI]
+
+    PaymentStatus:
+      type: string
+      enum: [PENDING, PAID, FAILED, REFUNDED]
+
+    SuccessEnvelope:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      required: [timestamp, status, errorCode, message, path, details]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        errorCode:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+
+    AuthUser:
+      # kept as a shared type — referenced by UserProfile in core spec
+      type: object
+      required: [id, name, email, role]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+
+
+    Product:
+      type: object
+      required:
+        [id, name, fruitType, description, bottleSizeMl, price, availableQuantity, isActive, imageUrl, category]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        fruitType:
+          type: string
+        description:
+          type: string
+        bottleSizeMl:
+          type: integer
+          minimum: 50
+        price:
+          type: number
+          format: double
+          minimum: 0
+        availableQuantity:
+          type: integer
+          minimum: 0
+        isActive:
+          type: boolean
+        imageUrl:
+          type: string
+        category:
+          $ref: '#/components/schemas/ProductCategory'
+
+    CartItem:
+      type: object
+      required: [id, productId, name, bottleSizeMl, quantity, unitPrice, lineTotal]
+      properties:
+        id:
+          type: string
+        productId:
+          type: string
+        name:
+          type: string
+        bottleSizeMl:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+        unitPrice:
+          type: number
+          format: double
+        lineTotal:
+          type: number
+          format: double
+
+    Cart:
+      type: object
+      required: [id, userId, items, subtotal]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        subtotal:
+          type: number
+          format: double
+
+    AddCartItemRequest:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+
+    UpdateCartItemRequest:
+      type: object
+      required: [quantity]
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+
+    PlaceOrderRequest:
+      type: object
+      required: [deliveryAddress, paymentMethod]
+      properties:
+        deliveryAddress:
+          type: string
+          minLength: 10
+          maxLength: 500
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethod'
+
+    AdminUpdateOrderStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        note:
+          type: string
+          maxLength: 500
+
+    OrderItem:
+      type: object
+      required: [productId, name, bottleSizeMl, quantity, unitPrice, lineTotal]
+      properties:
+        productId:
+          type: string
+        name:
+          type: string
+        bottleSizeMl:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+        unitPrice:
+          type: number
+          format: double
+        lineTotal:
+          type: number
+          format: double
+
+    Order:
+      type: object
+      required:
+        [id, orderNumber, userId, status, totalAmount, deliveryAddress, paymentMethod, paymentStatus, createdAt, updatedAt, items]
+      properties:
+        id:
+          type: string
+        orderNumber:
+          type: string
+        userId:
+          type: string
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        totalAmount:
+          type: number
+          format: double
+        deliveryAddress:
+          type: string
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethod'
+        paymentStatus:
+          $ref: '#/components/schemas/PaymentStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+
+    UpdateUserProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 80
+        phone:
+          type: string
+          minLength: 10
+          maxLength: 20
+
+    Address:
+      type: object
+      properties:
+        line1:
+          type: string
+          maxLength: 120
+        line2:
+          type: string
+          maxLength: 120
+        city:
+          type: string
+          maxLength: 80
+        state:
+          type: string
+          maxLength: 80
+        country:
+          type: string
+          maxLength: 80
+        postalCode:
+          type: string
+          maxLength: 20
+
+    ExtendedProfile:
+      type: object
+      required: [externalId, email]
+      properties:
+        externalId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+          maxLength: 120
+        displayName:
+          type: string
+          maxLength: 120
+        bio:
+          type: string
+          maxLength: 1000
+        avatarUrl:
+          type: string
+          format: uri
+          maxLength: 500
+        gender:
+          type: string
+          maxLength: 20
+        dateOfBirth:
+          type: string
+          format: date
+        phone:
+          type: string
+          maxLength: 20
+        websiteUrl:
+          type: string
+          format: uri
+          maxLength: 300
+        address:
+          $ref: '#/components/schemas/Address'
+        jobTitle:
+          type: string
+          maxLength: 120
+        company:
+          type: string
+          maxLength: 120
+        industry:
+          type: string
+          maxLength: 80
+        linkedinUrl:
+          type: string
+          format: uri
+          maxLength: 300
+
+    UpdateExtendedProfileRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+          maxLength: 120
+        bio:
+          type: string
+          maxLength: 1000
+        avatarUrl:
+          type: string
+          format: uri
+          maxLength: 500
+        gender:
+          type: string
+          maxLength: 20
+        dateOfBirth:
+          type: string
+          format: date
+        phone:
+          type: string
+          maxLength: 20
+        websiteUrl:
+          type: string
+          format: uri
+          maxLength: 300
+        address:
+          $ref: '#/components/schemas/Address'
+        jobTitle:
+          type: string
+          maxLength: 120
+        company:
+          type: string
+          maxLength: 120
+        industry:
+          type: string
+          maxLength: 80
+        linkedinUrl:
+          type: string
+          format: uri
+          maxLength: 300
+
+    SuccessExtendedProfileResponse:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/ExtendedProfile'
+
+    HealthPayload:
+      type: object
+      properties:
+        status:
+          type: string
+
+    AdminSalesSummary:
+      type: object
+      required: [fromDate, toDate, orderCount, grossSales, deliveredCount, cancelledCount]
+      properties:
+        fromDate:
+          type: string
+          format: date
+        toDate:
+          type: string
+          format: date
+        orderCount:
+          type: integer
+        grossSales:
+          type: number
+          format: double
+        deliveredCount:
+          type: integer
+        cancelledCount:
+          type: integer
+
+    AdminTopProduct:
+      type: object
+      required: [productId, productName, quantitySold, revenue]
+      properties:
+        productId:
+          type: string
+        productName:
+          type: string
+        quantitySold:
+          type: integer
+        revenue:
+          type: number
+          format: double
+
+    AdminLowStockItem:
+      type: object
+      required: [productId, productName, category, availableQuantity, threshold]
+      properties:
+        productId:
+          type: string
+        productName:
+          type: string
+        category:
+          $ref: '#/components/schemas/ProductCategory'
+        availableQuantity:
+          type: integer
+        threshold:
+          type: integer
+
+    ProductPage:
+      type: object
+      required: [items, total, page, size, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        total:
+          type: integer
+        page:
+          type: integer
+        size:
+          type: integer
+        totalPages:
+          type: integer
+
+    OrderPage:
+      type: object
+      required: [items, total, page, size, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+        total:
+          type: integer
+        page:
+          type: integer
+        size:
+          type: integer
+        totalPages:
+          type: integer
+
+
+    SuccessProductResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Product'
+
+    SuccessProductPageResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ProductPage'
+
+    SuccessCartResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Cart'
+
+    SuccessOrderResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Order'
+
+    SuccessOrderPageResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/OrderPage'
+
+    SuccessHealthResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/HealthPayload'
+
+    SuccessAdminSalesSummaryResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AdminSalesSummary'
+
+    SuccessAdminTopProductsResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminTopProduct'
+
+    SuccessAdminLowStockResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminLowStockItem'

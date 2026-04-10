@@ -1,0 +1,409 @@
+openapi: 3.0.3
+info:
+  title: Picklist API
+  version: 1.0.0
+  description: |
+    Public and admin endpoints for picklist management.
+    Public endpoints require no authentication.
+    Admin endpoints require ADMIN role.
+servers:
+  - url: http://localhost:8086
+    description: Local mm backend
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Picklist
+  - name: AdminPicklist
+
+paths:
+  /api/public/picklists/{name}:
+    get:
+      tags: [Picklist]
+      summary: Get picklist items by name and language
+      operationId: getPicklist
+      security: []
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Picklist key (e.g. RELIGION, EDUCATION)
+          schema:
+            type: string
+        - name: lang
+          in: query
+          required: false
+          description: Language code — 'en' (default) or 'hi'
+          schema:
+            type: string
+            default: en
+            enum: [en, hi]
+      responses:
+        '200':
+          description: Picklist items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PicklistResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/admin/picklists:
+    get:
+      tags: [AdminPicklist]
+      summary: List all picklists (all names and languages)
+      operationId: adminListPicklists
+      parameters:
+        - name: picklistName
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: lang
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [en, hi]
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Picklist entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PicklistEntryPageResponse'
+      security:
+        - bearerAuth: []
+
+    post:
+      tags: [AdminPicklist]
+      summary: Create a new picklist entry
+      operationId: adminCreatePicklistEntry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertPicklistEntryRequest'
+      responses:
+        '201':
+          description: Entry created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PicklistEntryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+      security:
+        - bearerAuth: []
+
+  /api/admin/picklists/{id}:
+    put:
+      tags: [AdminPicklist]
+      summary: Update a picklist entry
+      operationId: adminUpdatePicklistEntry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertPicklistEntryRequest'
+      responses:
+        '200':
+          description: Entry updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PicklistEntryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+    delete:
+      tags: [AdminPicklist]
+      summary: Delete a picklist entry
+      operationId: adminDeletePicklistEntry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Entry deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/admin/picklists/{id}/activate:
+    patch:
+      tags: [AdminPicklist]
+      summary: Activate a picklist entry
+      operationId: adminActivatePicklistEntry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Entry activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PicklistEntryResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/admin/picklists/{id}/deactivate:
+    patch:
+      tags: [AdminPicklist]
+      summary: Deactivate a picklist entry
+      operationId: adminDeactivatePicklistEntry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Entry deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PicklistEntryResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: 1-based page index
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    SizeParam:
+      name: size
+      in: query
+      description: Page size
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+
+  schemas:
+    PicklistItem:
+      type: object
+      required: [name, value]
+      properties:
+        name:
+          type: string
+          description: Uppercase language-neutral key (e.g. HINDU, BTECH)
+        value:
+          type: string
+          description: Localised display label for the requested language
+
+    Picklist:
+      type: object
+      required: [picklistName, lang, items]
+      properties:
+        picklistName:
+          type: string
+        lang:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PicklistItem'
+
+    PicklistResponse:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/Picklist'
+
+    PicklistEntry:
+      type: object
+      required: [id, picklistName, name, value, lang, sortOrder, active]
+      properties:
+        id:
+          type: integer
+          format: int64
+        picklistName:
+          type: string
+        name:
+          type: string
+          description: Uppercase language-neutral key
+        value:
+          type: string
+          description: Localised display label
+        lang:
+          type: string
+        sortOrder:
+          type: integer
+        active:
+          type: boolean
+
+    PicklistEntryPage:
+      type: object
+      required: [items, total, page, size, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PicklistEntry'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        size:
+          type: integer
+        totalPages:
+          type: integer
+
+    UpsertPicklistEntryRequest:
+      type: object
+      required: [picklistName, name, value, lang]
+      properties:
+        picklistName:
+          type: string
+          maxLength: 30
+        name:
+          type: string
+          maxLength: 120
+          description: Uppercase language-neutral key
+        value:
+          type: string
+          maxLength: 120
+          description: Localised display label
+        lang:
+          type: string
+          maxLength: 10
+          enum: [en, hi]
+        sortOrder:
+          type: integer
+          default: 100
+        active:
+          type: boolean
+          default: true
+
+    PicklistEntryResponse:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PicklistEntry'
+
+    PicklistEntryPageResponse:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/PicklistEntryPage'
+
+    SuccessMessageResponse:
+      type: object
+      required: [timestamp, status, message]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+
+    ApiErrorResponse:
+      type: object
+      required: [timestamp, status, errorCode, message, path, details]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        errorCode:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+        details:
+          type: array
+          items:
+            type: string

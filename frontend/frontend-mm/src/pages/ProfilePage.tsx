@@ -6,6 +6,7 @@ import { matrimonyApi } from '../api/matrimonyApi'
 import { AsyncState } from '../components/AsyncState'
 import { FieldError } from '../components/FieldError'
 import { GenderAvatarArtwork } from '../components/GenderAvatarArtwork'
+import { PhotoIdentifierImage } from '../components/PhotoIdentifierImage'
 import { PhotoGalleryStrip } from '../components/PhotoGalleryStrip'
 import { PhotoLightbox } from '../components/PhotoLightbox'
 import { PicklistSingleSelect } from '../components/PicklistSingleSelect'
@@ -65,7 +66,8 @@ export function ProfilePage() {
   const [selectedOccupation, setSelectedOccupation] = useState<PicklistItem | null>(null)
   const [annualIncome, setAnnualIncome] = useState('')
   const [bio, setBio] = useState('')
-  const [profilePhotoUrl, setProfilePhotoUrl] = useState('')
+  const [profilePhotoIdentifier, setProfilePhotoIdentifier] = useState('')
+  const [profilePhotoFallbackUrl, setProfilePhotoFallbackUrl] = useState('')
   const [preferredCity, setPreferredCity] = useState('')
   const [preferredReligion, setPreferredReligion] = useState<PicklistItem | null>(null)
   const [preferredCaste, setPreferredCaste] = useState<PicklistItem | null>(null)
@@ -144,6 +146,7 @@ export function ProfilePage() {
 
   const galleryPhotos = galleryPhotosData ?? []
   const lightboxImages = galleryPhotos.map((photo, index) => ({
+    photoIdentifier: photo.photoIdentifier,
     imageUrl: photo.photoUrl,
     alt: `Gallery photo ${index + 1}`,
   }))
@@ -165,7 +168,8 @@ export function ProfilePage() {
       setSelectedOccupation(resolvePicklistItem(occupationOptions, firstCsvItem(profile.occupation)))
       setAnnualIncome(String(profile.annualIncome ?? ''))
       setBio(profile.bio ?? '')
-      setProfilePhotoUrl(profile.profilePhotoUrl ?? '')
+      setProfilePhotoIdentifier(profile.profilePhotoIdentifier ?? '')
+      setProfilePhotoFallbackUrl(profile.profilePhotoUrl ?? '')
       setBiodataUrl(profile.biodataUrl ?? '')
       setProfileRelation(profile.relationToUser ?? null)
       setPreferredCity(profile.preference?.preferredCity ?? '')
@@ -238,7 +242,8 @@ export function ProfilePage() {
       setSelectedOccupation(resolvePicklistItem(occupationOptions, firstCsvItem(profile.occupation)))
       setAnnualIncome(String(profile.annualIncome ?? ''))
       setBio(profile.bio ?? '')
-      setProfilePhotoUrl(profile.profilePhotoUrl ?? '')
+      setProfilePhotoIdentifier(profile.profilePhotoIdentifier ?? '')
+      setProfilePhotoFallbackUrl(profile.profilePhotoUrl ?? '')
       setBiodataUrl(profile.biodataUrl ?? '')
       setProfileRelation(profile.relationToUser ?? null)
       setPreferredCity(profile.preference?.preferredCity ?? '')
@@ -279,7 +284,8 @@ export function ProfilePage() {
 
     try {
       const response = await matrimonyApi.uploadProfilePhoto(file)
-      setProfilePhotoUrl(response.data.photoUrl)
+      setProfilePhotoIdentifier(response.data.photoIdentifier ?? '')
+      setProfilePhotoFallbackUrl(response.data.photoUrl ?? '')
       showToast(response.message || 'Profile photo uploaded successfully.', 'success')
     } catch (err) {
       showToast(extractApiError(err, 'Unable to upload profile photo. Please try again.'), 'error')
@@ -323,7 +329,7 @@ export function ProfilePage() {
   }
 
   const onDeleteProfilePhoto = async () => {
-    if (!profilePhotoUrl) {
+    if (!profilePhotoIdentifier && !profilePhotoFallbackUrl) {
       return
     }
 
@@ -333,8 +339,9 @@ export function ProfilePage() {
     }
 
     try {
-      const response = await matrimonyApi.upsertMyProfile({ profilePhotoUrl: '' })
-      setProfilePhotoUrl(response.data.profilePhotoUrl ?? '')
+      const response = await matrimonyApi.upsertMyProfile({ profilePhotoIdentifier: '' })
+      setProfilePhotoIdentifier(response.data.profilePhotoIdentifier ?? '')
+      setProfilePhotoFallbackUrl(response.data.profilePhotoUrl ?? '')
       showToast(response.message || 'Profile photo deleted successfully.', 'success')
     } catch (err) {
       showToast(extractApiError(err, 'Unable to delete profile photo. Please try again.'), 'error')
@@ -411,8 +418,24 @@ export function ProfilePage() {
             <div className="stack">
               <strong>Profile Photo</strong>
               <div className="profile-photo-editable">
-                {profilePhotoUrl ? (
-                  <img className="profile-upload-preview" src={profilePhotoUrl} alt="Profile" />
+                {profilePhotoIdentifier || profilePhotoFallbackUrl ? (
+                  <PhotoIdentifierImage
+                    className="profile-upload-preview"
+                    photoIdentifier={profilePhotoIdentifier}
+                    fallbackSrc={profilePhotoFallbackUrl}
+                    alt="Profile"
+                    fallback={
+                      <button
+                        type="button"
+                        className={profileAvatarClassName}
+                        aria-label="Add profile photo"
+                        disabled={isUploadingProfilePhoto}
+                        onClick={() => profilePhotoInputRef.current?.click()}
+                      >
+                        <GenderAvatarArtwork gender={gender} />
+                      </button>
+                    }
+                  />
                 ) : (
                   <button
                     type="button"
@@ -428,7 +451,7 @@ export function ProfilePage() {
                   type="button"
                   className="photo-icon-button photo-icon-edit"
                   aria-label="Edit profile photo"
-                  disabled={isUploadingProfilePhoto || !profilePhotoUrl}
+                  disabled={isUploadingProfilePhoto || (!profilePhotoIdentifier && !profilePhotoFallbackUrl)}
                   onClick={() => profilePhotoInputRef.current?.click()}
                 >
                   ✎
@@ -437,7 +460,7 @@ export function ProfilePage() {
                   type="button"
                   className="photo-icon-button photo-icon-delete"
                   aria-label="Delete profile photo"
-                  disabled={isUploadingProfilePhoto || !profilePhotoUrl}
+                  disabled={isUploadingProfilePhoto || (!profilePhotoIdentifier && !profilePhotoFallbackUrl)}
                   onClick={() => void onDeleteProfilePhoto()}
                 >
                   ✕

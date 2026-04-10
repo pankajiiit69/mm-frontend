@@ -1,0 +1,1396 @@
+openapi: 3.0.3
+info:
+  title: Matrimony Backend API
+  version: 1.0.0
+  description: |
+    OpenAPI contract for Matrimony backend domain APIs.
+    Authentication and authorization endpoints are intentionally excluded
+    and are served by the userauth module.
+servers:
+  - url: http://localhost:8085
+    description: Local mm backend
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Health
+  - name: UserProfile
+  - name: Discovery
+  - name: Interests
+  - name: Shortlists
+  - name: Photos
+  - name: Biodata
+  - name: Admin
+
+
+paths:
+  /api/matrimony/photos/profile:
+    post:
+      tags: [Photos]
+      summary: Upload or replace profile photo
+      operationId: uploadProfilePhoto
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Profile photo uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhotoResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+      security:
+        - bearerAuth: []
+
+  /api/matrimony/photos/gallery:
+    get:
+      tags: [Photos]
+      summary: List my gallery photos
+      operationId: listGalleryPhotos
+      responses:
+        '200':
+          description: Gallery photo list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhotoListResponse'
+      security:
+        - bearerAuth: []
+    post:
+      tags: [Photos]
+      summary: Upload a gallery photo
+      operationId: uploadGalleryPhoto
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Gallery photo uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhotoResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+      security:
+        - bearerAuth: []
+
+  /api/matrimony/photos/gallery/{photoId}:
+    delete:
+      tags: [Photos]
+      summary: Delete a gallery photo
+      operationId: deleteGalleryPhoto
+      parameters:
+        - name: photoId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Photo deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/matrimony/photos/identifier/{photoIdentifier}:
+    get:
+      tags: [Photos]
+      summary: Get photo content by photo identifier
+      operationId: getPhotoDataByIdentifier
+      parameters:
+        - name: photoIdentifier
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Photo content fetched
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/matrimony/biodata:
+    post:
+      tags: [Biodata]
+      summary: Upload or replace my biodata PDF
+      operationId: uploadBiodata
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PDF file only, max 10 MB
+      responses:
+        '200':
+          description: Biodata uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+      security:
+        - bearerAuth: []
+    get:
+      tags: [Biodata]
+      summary: Download my own biodata PDF
+      operationId: downloadMyBiodata
+      responses:
+        '200':
+          description: Biodata PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+    delete:
+      tags: [Biodata]
+      summary: Delete my biodata PDF
+      operationId: deleteMyBiodata
+      responses:
+        '200':
+          description: Biodata deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/matrimony/biodata/{profileId}:
+    get:
+      tags: [Biodata]
+      summary: Download biodata PDF for a given profile
+      operationId: downloadBiodataByProfileId
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Biodata PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  # ── Admin: Dashboard ──────────────────────────────────────────────────────
+  /api/admin/dashboard/stats:
+    get:
+      tags: [Admin]
+      summary: Get dashboard statistics
+      operationId: getDashboardStats
+      responses:
+        '200':
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStatsResponse'
+      security:
+        - bearerAuth: []
+
+  # ── Admin: User Management ─────────────────────────────────────────────────
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: List / search users
+      operationId: adminListUsers
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: email
+          in: query
+          schema:
+            type: string
+        - name: name
+          in: query
+          schema:
+            type: string
+        - name: verificationStatus
+          in: query
+          schema:
+            $ref: '#/components/schemas/VerificationStatus'
+        - name: active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: User list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserPageResponse'
+      security:
+        - bearerAuth: []
+
+  /api/admin/users/{userId}:
+    get:
+      tags: [Admin]
+      summary: Get user details
+      operationId: adminGetUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/admin/users/{userId}/activate:
+    patch:
+      tags: [Admin]
+      summary: Activate a user account
+      operationId: adminActivateUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: User activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/admin/users/{userId}/deactivate:
+    patch:
+      tags: [Admin]
+      summary: Deactivate a user account
+      operationId: adminDeactivateUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: User deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/admin/users/{userId}/verification-status:
+    patch:
+      tags: [Admin]
+      summary: Manually set verification status of a user
+      operationId: adminSetUserVerificationStatus
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetVerificationStatusRequest'
+      responses:
+        '200':
+          description: Verification status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  # ── Admin: Profile Management ──────────────────────────────────────────────
+  /api/admin/profiles:
+    get:
+      tags: [Admin]
+      summary: List / search matrimony profiles
+      operationId: adminListProfiles
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: fullName
+          in: query
+          schema:
+            type: string
+        - name: gender
+          in: query
+          schema:
+            $ref: '#/components/schemas/Gender'
+        - name: religion
+          in: query
+          schema:
+            type: string
+        - name: city
+          in: query
+          schema:
+            type: string
+        - name: verified
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Profile list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfilePageResponse'
+      security:
+        - bearerAuth: []
+
+  /api/admin/profiles/{profileId}/verify:
+    patch:
+      tags: [Admin]
+      summary: Verify a matrimony profile
+      operationId: adminVerifyProfile
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Profile verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/admin/profiles/{profileId}/unverify:
+    patch:
+      tags: [Admin]
+      summary: Remove verification from a matrimony profile
+      operationId: adminUnverifyProfile
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Profile unverified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/admin/profiles/{profileId}:
+    delete:
+      tags: [Admin]
+      summary: Delete a matrimony profile
+      operationId: adminDeleteProfile
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Profile deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      security:
+        - bearerAuth: []
+
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Health probe endpoint
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Service health
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /api/matrimony/discovery/profiles:
+    get:
+      tags: [Discovery]
+      summary: Search and discover matrimony profiles
+      operationId: discoverMatrimonyProfiles
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: gender
+          in: query
+          schema:
+            $ref: '#/components/schemas/Gender'
+        - name: maritalStatus
+          in: query
+          schema:
+            $ref: '#/components/schemas/MaritalStatus'
+        - name: religion
+          in: query
+          schema:
+            type: string
+            maxLength: 60
+        - name: caste
+          in: query
+          schema:
+            type: string
+            maxLength: 60
+        - name: motherTongue
+          in: query
+          schema:
+            type: string
+            maxLength: 60
+        - name: city
+          in: query
+          schema:
+            type: string
+            maxLength: 80
+        - name: education
+          in: query
+          description: Filter by one or more education keys (picklist name=EDUCATION)
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: occupation
+          in: query
+          description: Filter by one or more occupation keys (picklist name=OCCUPATION)
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: minAge
+          in: query
+          schema:
+            type: integer
+            minimum: 18
+            maximum: 80
+        - name: maxAge
+          in: query
+          schema:
+            type: integer
+            minimum: 18
+            maximum: 80
+      responses:
+        '200':
+          description: Profile discovery page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfilePageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/matrimony/discovery/religions:
+    get:
+      tags: [Discovery]
+      summary: List active religion values for discovery filter
+      operationId: listDiscoveryReligions
+      responses:
+        '200':
+          description: Religion values fetched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StringListResponse'
+
+  /api/matrimony/discovery/educations:
+    get:
+      tags: [Discovery]
+      summary: Search active education values for discovery autocomplete
+      operationId: searchDiscoveryEducations
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 10
+      responses:
+        '200':
+          description: Education values fetched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StringListResponse'
+
+  /api/matrimony/interests:
+    post:
+      tags: [Interests]
+      summary: Express interest to a profile
+      operationId: sendInterest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInterestRequest'
+      responses:
+        '201':
+          description: Interest created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/matrimony/interests/sent:
+    get:
+      tags: [Interests]
+      summary: List interests sent by current user
+      operationId: listSentInterests
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Sent interest page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterestPageResponse'
+
+  /api/matrimony/interests/received:
+    get:
+      tags: [Interests]
+      summary: List interests received by current user
+      operationId: listReceivedInterests
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Received interest page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterestPageResponse'
+
+  /api/matrimony/interests/{interestId}/status:
+    patch:
+      tags: [Interests]
+      summary: Update status of a received interest
+      operationId: updateInterestStatus
+      parameters:
+        - name: interestId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInterestStatusRequest'
+      responses:
+        '200':
+          description: Interest status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/matrimony/shortlists:
+    get:
+      tags: [Shortlists]
+      summary: List shortlisted profiles for current user
+      operationId: listShortlistedProfiles
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Shortlist page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfilePageResponse'
+
+  /api/matrimony/shortlists/{profileId}:
+    put:
+      tags: [Shortlists]
+      summary: Add a profile to shortlist
+      operationId: addProfileToShortlist
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Profile shortlisted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Shortlists]
+      summary: Remove a profile from shortlist
+      operationId: removeProfileFromShortlist
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Profile removed from shortlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+
+  /api/users/profile/extended/me:
+    get:
+      tags: [UserProfile]
+      summary: Get current user's matrimony profile
+      operationId: getMyMatrimonyProfile
+      responses:
+        '200':
+          description: Profile fetched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [UserProfile]
+      summary: Upsert current user's matrimony profile
+      operationId: upsertMyMatrimonyProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertMyProfileRequest'
+      responses:
+        '200':
+          description: Profile saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/users/profile/extended/{profileId}:
+    get:
+      tags: [UserProfile]
+      summary: Get profile details by profile id
+      operationId: getMatrimonyProfileById
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Profile fetched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: 1-based page index
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    SizeParam:
+      name: size
+      in: query
+      description: Page size
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+
+  schemas:
+    Gender:
+      type: string
+      enum: [MALE, FEMALE, OTHER]
+
+    MaritalStatus:
+      type: string
+      enum: [NEVER_MARRIED, DIVORCED, WIDOWED, AWAITING_DIVORCE]
+
+    InterestStatus:
+      type: string
+      enum: [SENT, ACCEPTED, DECLINED, WITHDRAWN]
+
+    PartnerPreference:
+      type: object
+      properties:
+        minAge:
+          type: integer
+          minimum: 18
+          maximum: 80
+        maxAge:
+          type: integer
+          minimum: 18
+          maximum: 80
+        preferredReligion:
+          type: string
+          maxLength: 60
+        preferredCaste:
+          type: string
+          maxLength: 60
+        preferredCity:
+          type: string
+          maxLength: 80
+        preferredMotherTongue:
+          type: string
+          maxLength: 60
+        preferredMaritalStatus:
+          $ref: '#/components/schemas/MaritalStatus'
+        preferredEducation:
+          type: string
+          maxLength: 100
+
+    ProfileSummary:
+      type: object
+      required: [profileId, referenceId, fullName, age, city, religion, maritalStatus]
+      properties:
+        profileId:
+          type: integer
+          format: int64
+        referenceId:
+          type: string
+          pattern: '^VVK[MFO][A-Z]{2}[0-9]{4}$'
+        fullName:
+          type: string
+        age:
+          type: integer
+        city:
+          type: string
+        religion:
+          type: string
+        maritalStatus:
+          $ref: '#/components/schemas/MaritalStatus'
+        education:
+          type: string
+        occupation:
+          type: string
+        profilePhotoIdentifier:
+          type: string
+        verified:
+          type: boolean
+        compatibilityScore:
+          type: number
+          format: double
+
+    ProfileDetail:
+      allOf:
+        - $ref: '#/components/schemas/ProfileSummary'
+        - type: object
+          required: [gender, annualIncome, profileCompletion]
+          properties:
+            gender:
+              $ref: '#/components/schemas/Gender'
+            dateOfBirth:
+              type: string
+              format: date
+            motherTongue:
+              type: string
+            caste:
+              type: string
+            country:
+              type: string
+            state:
+              type: string
+            annualIncome:
+              type: number
+            diet:
+              type: string
+            smoking:
+              type: boolean
+            drinking:
+              type: boolean
+            bio:
+              type: string
+              maxLength: 2000
+            relationToUser:
+              type: string
+              maxLength: 60
+            biodataIdentifier:
+              type: string
+            profileCompletion:
+              type: integer
+            galleryPhotos:
+              type: array
+              items:
+                $ref: '#/components/schemas/Photo'
+            preference:
+              $ref: '#/components/schemas/PartnerPreference'
+
+    UpsertMyProfileRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+          maxLength: 120
+        gender:
+          $ref: '#/components/schemas/Gender'
+        dateOfBirth:
+          type: string
+          format: date
+        motherTongue:
+          type: string
+          maxLength: 60
+        religion:
+          type: string
+          maxLength: 60
+        caste:
+          type: string
+          maxLength: 60
+        maritalStatus:
+          $ref: '#/components/schemas/MaritalStatus'
+        education:
+          type: string
+          maxLength: 100
+        occupation:
+          type: string
+          maxLength: 100
+        annualIncome:
+          type: number
+          minimum: 0
+        city:
+          type: string
+          maxLength: 80
+        state:
+          type: string
+          maxLength: 80
+        country:
+          type: string
+          maxLength: 80
+        bio:
+          type: string
+          maxLength: 2000
+        relationToUser:
+          type: string
+          maxLength: 60
+        profilePhotoIdentifier:
+          type: string
+        preference:
+          $ref: '#/components/schemas/PartnerPreference'
+
+    ProfilePage:
+      type: object
+      required: [items, total, page, size, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProfileSummary'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        size:
+          type: integer
+        totalPages:
+          type: integer
+
+    Interest:
+      type: object
+      required: [id, fromProfileId, toProfileId, status, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        fromProfileId:
+          type: integer
+          format: int64
+        toProfileId:
+          type: integer
+          format: int64
+        status:
+          $ref: '#/components/schemas/InterestStatus'
+        message:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    InterestPage:
+      type: object
+      required: [items, total, page, size, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Interest'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        size:
+          type: integer
+        totalPages:
+          type: integer
+
+    CreateInterestRequest:
+      type: object
+      required: [toProfileId]
+      properties:
+        toProfileId:
+          type: integer
+          format: int64
+        message:
+          type: string
+          maxLength: 500
+
+    UpdateInterestStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/InterestStatus'
+
+    HealthResponse:
+      type: object
+      required: [status, timestamp]
+      properties:
+        status:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    SuccessMessageResponse:
+      type: object
+      required: [timestamp, status, message]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+
+    ProfileDetailResponse:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/ProfileDetail'
+
+    ProfilePageResponse:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/ProfilePage'
+
+    InterestResponse:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/Interest'
+
+    InterestPageResponse:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/InterestPage'
+
+    StringListResponse:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            type: string
+
+    Photo:
+      type: object
+      required: [photoIdentifier, displayOrder]
+      properties:
+        id:
+          type: integer
+          format: int64
+        photoIdentifier:
+          type: string
+        displayOrder:
+          type: integer
+
+    PhotoResponse:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/Photo'
+
+    PhotoListResponse:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Photo'
+
+    ApiErrorResponse:
+      type: object
+      required: [timestamp, status, errorCode, message, path, details]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        errorCode:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+
+    VerificationStatus:
+      type: string
+      enum: [PENDING_EMAIL, PENDING_PHONE, PENDING_PROFILE, PROFILE_NOT_CREATED, PROFILE_CREATED, VERIFIED]
+      description: Account verification / onboarding state
+
+    AdminUser:
+      type: object
+      required: [id, name, email, active, verificationStatus, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        active:
+          type: boolean
+        verificationStatus:
+          $ref: '#/components/schemas/VerificationStatus'
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminUserPage:
+      type: object
+      required: [items, total, page, size, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminUser'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        size:
+          type: integer
+        totalPages:
+          type: integer
+
+    AdminUserResponse:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/AdminUser'
+
+    AdminUserPageResponse:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/AdminUserPage'
+
+    SetVerificationStatusRequest:
+      type: object
+      required: [verificationStatus]
+      properties:
+        verificationStatus:
+          $ref: '#/components/schemas/VerificationStatus'
+
+    DashboardStats:
+      type: object
+      required: [totalUsers, totalProfiles, verifiedProfiles, activeUsers, newUsersToday, newUsersThisWeek, newUsersThisMonth, profilesByGender]
+      properties:
+        totalUsers:
+          type: integer
+          format: int64
+        totalProfiles:
+          type: integer
+          format: int64
+        verifiedProfiles:
+          type: integer
+          format: int64
+        activeUsers:
+          type: integer
+          format: int64
+        newUsersToday:
+          type: integer
+          format: int64
+        newUsersThisWeek:
+          type: integer
+          format: int64
+        newUsersThisMonth:
+          type: integer
+          format: int64
+        profilesByGender:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+
+    DashboardStatsResponse:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/DashboardStats'
+

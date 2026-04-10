@@ -64,6 +64,7 @@ function normalizePhotoUrl(photoUrl?: string) {
 function normalizeProfileSummary(profile: MatrimonyProfileSummary): MatrimonyProfileSummary {
   return {
     ...profile,
+    profilePhotoIdentifier: profile.profilePhotoIdentifier,
     profilePhotoUrl: normalizePhotoUrl(profile.profilePhotoUrl),
   }
 }
@@ -71,6 +72,7 @@ function normalizeProfileSummary(profile: MatrimonyProfileSummary): MatrimonyPro
 function normalizeProfileDetail(profile: MatrimonyProfileDetail): MatrimonyProfileDetail {
   return {
     ...profile,
+    profilePhotoIdentifier: profile.profilePhotoIdentifier,
     profilePhotoUrl: normalizePhotoUrl(profile.profilePhotoUrl),
     biodataUrl: normalizePhotoUrl(profile.biodataUrl),
     galleryPhotos: profile.galleryPhotos?.map(normalizePhoto) ?? [],
@@ -80,8 +82,23 @@ function normalizeProfileDetail(profile: MatrimonyProfileDetail): MatrimonyProfi
 function normalizePhoto(photo: Photo): Photo {
   return {
     ...photo,
+    photoIdentifier: photo.photoIdentifier,
     photoUrl: normalizePhotoUrl(photo.photoUrl) ?? photo.photoUrl,
   }
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const result = typeof reader.result === 'string' ? reader.result : ''
+      resolve(result)
+    }
+    reader.onerror = () => {
+      reject(new Error('Unable to read image content.'))
+    }
+    reader.readAsDataURL(blob)
+  })
 }
 
 function normalizeAdminUser(user: AdminUser): AdminUser {
@@ -204,6 +221,22 @@ export const matrimonyApi = {
     return {
       ...response.data,
       data: normalizePhoto(response.data.data),
+    }
+  },
+
+  async getPhotoContentByIdentifier(photoIdentifier: string) {
+    const response = await privateApi.get<Blob, AxiosResponse<Blob>>(
+      `/api/matrimony/photos/identifier/${encodeURIComponent(photoIdentifier)}`,
+      {
+        responseType: 'blob',
+      },
+    )
+    const imageDataUrl = await blobToDataUrl(response.data)
+
+    return {
+      data: {
+        imageDataUrl,
+      },
     }
   },
 

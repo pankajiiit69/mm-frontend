@@ -1,0 +1,186 @@
+{
+  "info": {
+    "name": "MM App Backend",
+    "description": "Postman collection for userauth + matrimony backend APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/health"
+      }
+    },
+    {
+      "name": "Auth - Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"MM Demo User\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/register"
+      }
+    },
+    {
+      "name": "Auth - Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json && json.data && json.data.accessToken) {",
+              "  pm.collectionVariables.set('accessToken', json.data.accessToken);",
+              "}",
+              "if (json && json.data && json.data.refreshToken) {",
+              "  pm.collectionVariables.set('refreshToken', json.data.refreshToken);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/login"
+      }
+    },
+    {
+      "name": "Profiles - Upsert My Profile",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"MM Demo User\",\n  \"gender\": \"MALE\",\n  \"dateOfBirth\": \"1995-08-20\",\n  \"motherTongue\": \"Hindi\",\n  \"religion\": \"Hindu\",\n  \"caste\": \"Brahmin\",\n  \"maritalStatus\": \"NEVER_MARRIED\",\n  \"education\": \"B.Tech\",\n  \"occupation\": \"Engineer\",\n  \"annualIncome\": 1800000,\n  \"city\": \"Pune\",\n  \"state\": \"Maharashtra\",\n  \"country\": \"India\",\n  \"bio\": \"Looking for a meaningful and family-oriented partnership.\",\n  \"profilePhotoIdentifier\": \"5c0f8d62-0d37-4b55-9ff6-1a5a7a746b8b\",\n  \"preference\": {\n    \"minAge\": 23,\n    \"maxAge\": 30,\n    \"preferredReligion\": \"Hindu\",\n    \"preferredCity\": \"Pune\",\n    \"preferredEducation\": \"Graduate\"\n  }\n}"
+        },
+        "url": "{{baseUrl}}/api/users/profile/extended/me"
+      }
+    },
+    {
+      "name": "Profiles - Get My Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/users/profile/extended/me"
+      }
+    },
+    {
+      "name": "Discovery - Search Profiles",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/matrimony/discovery/profiles?page=1&size=10&gender=FEMALE&city=Bengaluru"
+      }
+    },
+    {
+      "name": "Interests - Send Interest",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"toProfileId\": \"{{targetProfileId}}\",\n  \"message\": \"Hello, would like to connect for matrimony discussion.\"\n}"
+        },
+        "url": "{{baseUrl}}/api/matrimony/interests"
+      }
+    },
+    {
+      "name": "Interests - List Sent",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/matrimony/interests/sent?page=1&size=10"
+      }
+    },
+    {
+      "name": "Interests - List Received",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/matrimony/interests/received?page=1&size=10"
+      }
+    },
+    {
+      "name": "Interests - Update Status",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"ACCEPTED\"\n}"
+        },
+        "url": "{{baseUrl}}/api/matrimony/interests/{{interestId}}/status"
+      }
+    },
+    {
+      "name": "Shortlist - Add",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/matrimony/shortlists/{{targetProfileId}}"
+      }
+    },
+    {
+      "name": "Shortlist - List",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/matrimony/shortlists?page=1&size=10"
+      }
+    },
+    {
+      "name": "Shortlist - Remove",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/matrimony/shortlists/{{targetProfileId}}"
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8085" },
+    { "key": "email", "value": "mm.demo@example.com" },
+    { "key": "password", "value": "Password@123" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "targetProfileId", "value": "6d0e1ac3-0f11-4a95-a0a5-a45f2e885002" },
+    { "key": "interestId", "value": "1" }
+  ]
+}

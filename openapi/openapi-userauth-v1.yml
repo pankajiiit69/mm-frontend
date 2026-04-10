@@ -1,0 +1,506 @@
+openapi: 3.0.3
+info:
+  title: Fruzoos UserAuth API
+  version: 1.0.0
+  description: |
+    Authentication and authorization contract for the Fruzoos UserAuth module.
+    Covers registration, login, token refresh, logout, password-reset flow,
+    and social OAuth2 login.
+servers:
+  - url: http://localhost:8085
+    description: Local backend
+
+tags:
+  - name: Auth
+
+paths:
+  /api/auth/me:
+    get:
+      tags: [ Auth ]
+      summary: Get current authenticated user data
+      operationId: getMyUserData
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Profile fetched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessUserDataResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user account
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessAuthSessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email and password
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessAuthSessionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token using refresh token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessTokenPairResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout and invalidate refresh token
+      operationId: logout
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessLogoutResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/password-reset/request-otp:
+    post:
+      tags: [Auth]
+      summary: Request a password-reset OTP sent to the registered mobile number
+      operationId: requestPasswordResetOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetOtpRequest'
+      responses:
+        '200':
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/auth/password-reset/verify-otp:
+    post:
+      tags: [Auth]
+      summary: Verify the OTP and receive a short-lived reset token
+      operationId: verifyPasswordResetOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetVerifyOtpRequest'
+      responses:
+        '200':
+          description: OTP verified, reset token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessPasswordResetTokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/auth/password-reset/reset:
+    post:
+      tags: [Auth]
+      summary: Set a new password using the reset token obtained after OTP verification
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '200':
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/auth/social/{provider}:
+    post:
+      tags: [Auth]
+      summary: Social login / auto-registration via a third-party OAuth2 provider
+      operationId: socialLogin
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+            enum: [google, github, facebook, apple]
+          description: Lower-case social provider name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SocialLoginRequest'
+      responses:
+        '200':
+          description: Social login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessAuthSessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    # ── Shared envelope / error ───────────────────────────────────────────────
+    SuccessEnvelope:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      required: [timestamp, status, errorCode, message, path, details]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        errorCode:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+
+    # ── Auth domain types ─────────────────────────────────────────────────────
+    VerificationStatus:
+      type: string
+      description: |
+        Account verification / onboarding state.
+        Clients MUST redirect to the profile-completion page when status is
+        anything other than VERIFIED.
+      enum:
+        - PENDING_EMAIL
+        - PENDING_PHONE
+        - PENDING_PROFILE
+        - PROFILE_NOT_CREATED
+        - PROFILE_CREATED
+        - VERIFIED
+
+    Role:
+      type: string
+      enum: [ADMIN, USER]
+
+    AuthUser:
+      type: object
+      required: [id, name, email, role]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+
+    TokenPair:
+      type: object
+      required: [accessToken, refreshToken]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+
+    AuthSession:
+      type: object
+      required: [user, tokens]
+      properties:
+        user:
+          $ref: '#/components/schemas/AuthUser'
+        tokens:
+          $ref: '#/components/schemas/TokenPair'
+
+    # ── Request bodies ────────────────────────────────────────────────────────
+    RegisterRequest:
+      type: object
+      required: [name, email, password, phone]
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 80
+        email:
+          type: string
+          format: email
+          maxLength: 120
+        password:
+          type: string
+          minLength: 8
+          maxLength: 64
+        phone:
+          type: string
+          minLength: 10
+          maxLength: 20
+          description: Mobile number (E.164 format, e.g. +919876543210)
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    LogoutRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+
+    SocialLoginRequest:
+      type: object
+      required: [idToken]
+      properties:
+        idToken:
+          type: string
+          description: Raw identity-token (or OAuth2 access-token) from the social provider SDK
+
+    PasswordResetOtpRequest:
+      type: object
+      required: [mobile]
+      properties:
+        mobile:
+          type: string
+          description: Registered mobile number (E.164 format, e.g. +919876543210)
+          minLength: 10
+          maxLength: 20
+
+    PasswordResetVerifyOtpRequest:
+      type: object
+      required: [mobile, otp]
+      properties:
+        mobile:
+          type: string
+          minLength: 10
+          maxLength: 20
+        otp:
+          type: string
+          minLength: 6
+          maxLength: 6
+          description: 6-digit OTP received on mobile
+
+    PasswordResetRequest:
+      type: object
+      required: [resetToken, newPassword]
+      properties:
+        resetToken:
+          type: string
+          description: Short-lived token received after OTP verification
+        newPassword:
+          type: string
+          minLength: 8
+          maxLength: 64
+
+    # ── Payload wrappers ──────────────────────────────────────────────────────
+    MessagePayload:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    PasswordResetTokenPayload:
+      type: object
+      required: [resetToken]
+      properties:
+        resetToken:
+          type: string
+
+    # ── Success response envelopes ────────────────────────────────────────────
+    SuccessAuthSessionResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AuthSession'
+
+    SuccessTokenPairResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/TokenPair'
+
+    SuccessLogoutResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [loggedOut]
+              properties:
+                loggedOut:
+                  type: boolean
+
+    SuccessMessageResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: '#/components/schemas/MessagePayload'
+
+    SuccessPasswordResetTokenResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: '#/components/schemas/PasswordResetTokenPayload'
+
+    SuccessUserDataResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/UserProfile'
+
+    UserProfile:
+      type: object
+      required: [ id, name, email, role, verificationStatus ]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+        phone:
+          type: string
+        verificationStatus:
+          $ref: '#/components/schemas/VerificationStatus'
