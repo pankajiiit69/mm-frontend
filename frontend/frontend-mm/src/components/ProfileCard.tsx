@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { GenderAvatarArtwork } from './GenderAvatarArtwork'
+import { PhotoIdentifierImage } from './PhotoIdentifierImage'
 import { formatEnumLabel } from '../utils/format'
 import type { Gender, MatrimonyProfileSummary } from '../types/matrimony'
 
@@ -24,7 +25,8 @@ export function ProfileCard({
 }: ProfileCardProps) {
   const resolvedGender = profile.gender ?? avatarGender
   const [photoError, setPhotoError] = useState(false)
-  const showAvatar = !profile.profilePhotoUrl || photoError
+  const hasProfilePhoto = Boolean(profile.profilePhotoIdentifier || profile.profilePhotoUrl)
+  const showAvatar = !hasProfilePhoto || photoError
   const avatarClassName =
     resolvedGender === 'MALE'
       ? 'profile-card-fallback profile-card-fallback-male'
@@ -65,12 +67,18 @@ export function ProfileCard({
           ✓
         </span>
       )}
-      {profile.profilePhotoUrl && !showAvatar ? (
-        <img
+      {!showAvatar ? (
+        <PhotoIdentifierImage
           className="profile-card-image"
-          src={profile.profilePhotoUrl}
+          photoIdentifier={profile.profilePhotoIdentifier}
+          fallbackSrc={profile.profilePhotoUrl}
           alt={`${profile.fullName} profile`}
           onError={() => setPhotoError(true)}
+          fallback={
+            <div className={avatarClassName} aria-label={`${profile.fullName} avatar`}>
+              <GenderAvatarArtwork gender={resolvedGender} />
+            </div>
+          }
         />
       ) : (
         <div className={avatarClassName} aria-label={`${profile.fullName} avatar`}>

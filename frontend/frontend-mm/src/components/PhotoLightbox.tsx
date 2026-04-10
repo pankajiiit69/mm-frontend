@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
+import { PhotoIdentifierImage } from './PhotoIdentifierImage'
 
 interface PhotoLightboxItem {
-  imageUrl: string
+  imageUrl?: string
+  photoIdentifier?: string
   alt: string
 }
 
@@ -79,7 +81,13 @@ export function PhotoLightbox({ images, currentIndex, onNavigate, onClose }: Pho
       )}
 
       <div className="photo-lightbox-content" onClick={(event) => event.stopPropagation()}>
-        <img className="photo-lightbox-image" src={activeImage.imageUrl} alt={activeImage.alt} />
+        <PhotoIdentifierImage
+          className="photo-lightbox-image"
+          photoIdentifier={activeImage.photoIdentifier}
+          fallbackSrc={activeImage.imageUrl}
+          alt={activeImage.alt}
+          fallback={<div className="photo-lightbox-image" aria-label="Image unavailable" />}
+        />
         {hasMultiple && <div className="photo-lightbox-counter">{currentIndex + 1} / {images.length}</div>}
       </div>
     </div>

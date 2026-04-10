@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { Photo } from '../types/matrimony'
+import { PhotoIdentifierImage } from './PhotoIdentifierImage'
 
 interface PhotoGalleryStripProps {
   photos: Photo[]
@@ -33,14 +34,20 @@ export function PhotoGalleryStrip({
               const openAriaLabel = getOpenAriaLabel?.(index, photo) ?? imageAlt
 
               return (
-                <article key={photo.id ?? photo.photoUrl} className="photo-gallery-card">
+                <article key={photo.id ?? photo.photoIdentifier ?? photo.photoUrl ?? index} className="photo-gallery-card">
                   <button
                     type="button"
                     className="photo-gallery-open-button"
                     aria-label={openAriaLabel}
                     onClick={() => onOpenPhoto(index)}
                   >
-                    <img src={photo.photoUrl} alt={imageAlt} className="photo-gallery-image" />
+                    <PhotoIdentifierImage
+                      photoIdentifier={photo.photoIdentifier}
+                      fallbackSrc={photo.photoUrl}
+                      alt={imageAlt}
+                      className="photo-gallery-image"
+                      fallback={<div className="photo-gallery-image" aria-label="Image unavailable" />}
+                    />
                   </button>
                   {renderPhotoAction?.(photo, index)}
                 </article>

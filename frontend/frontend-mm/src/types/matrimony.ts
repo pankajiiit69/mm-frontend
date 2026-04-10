@@ -33,6 +33,7 @@ export interface MatrimonyProfileSummary {
   maritalStatus: MaritalStatus
   education?: string
   occupation?: string
+  profilePhotoIdentifier?: string
   profilePhotoUrl?: string
   verified?: boolean
   compatibilityScore?: number
@@ -141,7 +142,8 @@ export interface UpsertPicklistEntryRequest {
 
 export interface Photo {
   id?: number
-  photoUrl: string
+  photoIdentifier: string
+  photoUrl?: string
   displayOrder: number
 }
 
@@ -181,6 +183,7 @@ export interface UpsertMyProfileRequest {
   country?: string
   bio?: string
   biodataUrl?: string
+  profilePhotoIdentifier?: string
   profilePhotoUrl?: string
   relationToUser?: string
   preference?: PartnerPreference

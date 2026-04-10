@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { matrimonyApi } from '../api/matrimonyApi'
 import { AsyncState } from '../components/AsyncState'
 import { GenderAvatarArtwork } from '../components/GenderAvatarArtwork'
+import { PhotoIdentifierImage } from '../components/PhotoIdentifierImage'
 import { PhotoGalleryStrip } from '../components/PhotoGalleryStrip'
 import { PhotoLightbox } from '../components/PhotoLightbox'
 import { useAsyncData } from '../hooks/useAsyncData'
@@ -43,6 +44,7 @@ export function ProfileDetailPage() {
   const profile = data
   const lightboxImages =
     profile?.galleryPhotos?.map((photo, index) => ({
+      photoIdentifier: photo.photoIdentifier,
       imageUrl: photo.photoUrl,
       alt: `${profile.fullName} gallery ${index + 1}`,
     })) ?? []
@@ -129,8 +131,18 @@ export function ProfileDetailPage() {
             <div className="stack-wide">
               <div className="stack">
                 <strong>Profile Photo</strong>
-                {profile.profilePhotoUrl ? (
-                  <img className="profile-upload-preview" src={profile.profilePhotoUrl} alt={profile.fullName} />
+                {profile.profilePhotoIdentifier || profile.profilePhotoUrl ? (
+                  <PhotoIdentifierImage
+                    className="profile-upload-preview"
+                    photoIdentifier={profile.profilePhotoIdentifier}
+                    fallbackSrc={profile.profilePhotoUrl}
+                    alt={profile.fullName}
+                    fallback={
+                      <div className={profileAvatarClassName} aria-label={`${profile.fullName} avatar`}>
+                        <GenderAvatarArtwork gender={profile.gender} />
+                      </div>
+                    }
+                  />
                 ) : (
                   <div className={profileAvatarClassName} aria-label={`${profile.fullName} avatar`}>
                     <GenderAvatarArtwork gender={profile.gender} />
