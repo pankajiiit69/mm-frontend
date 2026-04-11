@@ -75,6 +75,8 @@ export function HomePage() {
   const [page, setPage] = useState(1)
   const [actionMessage, setActionMessage] = useState('')
   const [actionError, setActionError] = useState('')
+  const [shortlistOverrides, setShortlistOverrides] = useState<Record<string, boolean>>({})
+  const [shortlistBusyId, setShortlistBusyId] = useState<string | null>(null)
   const { showToast } = useToast()
   const hasRestoredFiltersRef = useRef(false)
   const shouldForcePreferencePrefillRef = useRef(false)
@@ -283,16 +285,28 @@ export function HomePage() {
     }
   }
 
-  const handleShortlist = async (profileId: string) => {
+  const handleToggleShortlist = async (profileId: string, isShortlisted: boolean) => {
     setActionMessage('')
     setActionError('')
+    setShortlistBusyId(profileId)
+
     try {
-      const response = await matrimonyApi.addProfileToShortlist(profileId)
-      setActionMessage(response.message || 'Profile shortlisted successfully.')
-      showToast(response.message || 'Profile shortlisted successfully.', 'success')
+      if (isShortlisted) {
+        const response = await matrimonyApi.removeProfileFromShortlist(profileId)
+        setShortlistOverrides((previous) => ({ ...previous, [profileId]: false }))
+        setActionMessage(response.message || 'Profile removed from shortlist.')
+        showToast(response.message || 'Profile removed from shortlist.', 'success')
+      } else {
+        const response = await matrimonyApi.addProfileToShortlist(profileId)
+        setShortlistOverrides((previous) => ({ ...previous, [profileId]: true }))
+        setActionMessage(response.message || 'Profile shortlisted successfully.')
+        showToast(response.message || 'Profile shortlisted successfully.', 'success')
+      }
     } catch (err) {
-      setActionError('Unable to shortlist this profile.')
-      showToast(extractApiError(err, 'Unable to shortlist this profile.'), 'error')
+      setActionError('Unable to update shortlist for this profile.')
+      showToast(extractApiError(err, 'Unable to update shortlist for this profile.'), 'error')
+    } finally {
+      setShortlistBusyId(null)
     }
   }
 
@@ -610,27 +624,51 @@ export function HomePage() {
         emptyMessage="No profiles found for current filters."
       >
         <div className="card-grid discovery-card-grid">
-          {profiles.map((profile) => (
-            <ProfileCard
-              key={profile.profileId}
-              profile={profile}
-              religionLabel={displayValue(profile.religion, religionMap)}
-              educationLabel={displayValue(profile.education, educationMap)}
-              occupationLabel={displayValue(profile.occupation, occupationMap)}
-              avatarGender={inferredCardGender}
-              onOpen={() => navigate(`/profiles/${profile.profileId}`)}
-              actions={
-                <>
-                <button onClick={() => void handleSendInterest(Number(profile.profileId))}>
-                  Send Interest
-                </button>
-                <button onClick={() => void handleShortlist(profile.profileId)}>
-                  Shortlist
-                </button>
-                </>
-              }
-            />
-          ))}
+          {profiles.map((profile) => {
+            const isShortlisted = shortlistOverrides[profile.profileId] ?? Boolean(profile.shortlisted)
+            const hasInterest = Boolean(profile.interestSentStatus || profile.interestReceivedStatus)
+
+            return (
+              <ProfileCard
+                key={profile.profileId}
+                profile={profile}
+                religionLabel={displayValue(profile.religion, religionMap)}
+                educationLabel={displayValue(profile.education, educationMap)}
+                occupationLabel={displayValue(profile.occupation, occupationMap)}
+                avatarGender={inferredCardGender}
+                onOpen={() => navigate(`/profiles/${profile.referenceId}`)}
+                cornerAction={
+                  <button
+                    type="button"
+                    className={`profile-card-heart-button${isShortlisted ? ' profile-card-heart-button-active' : ''}`}
+                    aria-label={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
+                    title={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
+                    disabled={shortlistBusyId === profile.profileId}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      void handleToggleShortlist(profile.profileId, isShortlisted)
+                    }}
+                  >
+                    ♥
+                  </button>
+                }
+                actions={
+                  <>
+                    {hasInterest ? (
+                      <button type="button" onClick={() => navigate('/interests')}>
+                        View Interest
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => void handleSendInterest(Number(profile.profileId))}>
+                        Send Interest
+                      </button>
+                    )}
+                  </>
+                }
+              />
+            )
+          })}
         </div>
       </AsyncState>
 

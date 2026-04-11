@@ -37,6 +37,9 @@ export interface MatrimonyProfileSummary {
   profilePhotoUrl?: string
   verified?: boolean
   compatibilityScore?: number
+  shortlisted?: boolean
+  interestSentStatus?: InterestStatus
+  interestReceivedStatus?: InterestStatus
 }
 
 export interface MatrimonyProfileDetail extends MatrimonyProfileSummary {
@@ -63,6 +66,8 @@ export interface Interest {
   id: number
   fromProfileId: string
   toProfileId: string
+  fromReferenceId?: string
+  toReferenceId?: string
   status: InterestStatus
   message?: string
   createdAt: string

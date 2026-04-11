@@ -21,24 +21,24 @@ function asText(value: string | number | undefined | null, fallback = '-') {
 }
 
 export function ProfileDetailPage() {
-  const { profileId } = useParams<{ profileId: string }>()
+  const { referenceId } = useParams<{ referenceId: string }>()
   const [message, setMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [isDownloadingBiodata, setIsDownloadingBiodata] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
   const { showToast } = useToast()
 
-  const enabled = Boolean(profileId)
+  const enabled = Boolean(referenceId)
 
   const { data, loading, error } = useAsyncData(
     async () => {
-      if (!profileId) {
-        throw new Error('Profile id is missing.')
+      if (!referenceId) {
+        throw new Error('Reference id is missing.')
       }
-      const response = await matrimonyApi.getProfileById(profileId)
+      const response = await matrimonyApi.getProfileByReferenceId(referenceId)
       return response.data
     },
-    [profileId],
+    [referenceId],
     enabled,
   )
   const profile = data
@@ -56,11 +56,11 @@ export function ProfileDetailPage() {
         : 'profile-upload-preview profile-card-fallback'
 
   const onSendInterest = async () => {
-    if (!profileId) return
+    if (!profile?.profileId) return
     setMessage('')
     setErrorMessage('')
     try {
-      const response = await matrimonyApi.sendInterest({ toProfileId: Number(profileId) })
+      const response = await matrimonyApi.sendInterest({ toProfileId: Number(profile.profileId) })
       setMessage(response.message || 'Interest sent successfully.')
       showToast(response.message || 'Interest sent successfully.', 'success')
     } catch (err) {
@@ -70,11 +70,11 @@ export function ProfileDetailPage() {
   }
 
   const onShortlist = async () => {
-    if (!profileId) return
+    if (!profile?.profileId) return
     setMessage('')
     setErrorMessage('')
     try {
-      const response = await matrimonyApi.addProfileToShortlist(profileId)
+      const response = await matrimonyApi.addProfileToShortlist(profile.profileId)
       setMessage(response.message || 'Profile shortlisted successfully.')
       showToast(response.message || 'Profile shortlisted successfully.', 'success')
     } catch (err) {
@@ -84,14 +84,14 @@ export function ProfileDetailPage() {
   }
 
   const onDownloadBiodata = async () => {
-    if (!profileId) return
+    if (!profile?.profileId) return
 
     setMessage('')
     setErrorMessage('')
     setIsDownloadingBiodata(true)
 
     try {
-      const { blob, fileName } = await matrimonyApi.downloadBiodataByProfileId(profileId)
+      const { blob, fileName } = await matrimonyApi.downloadBiodataByProfileId(profile.profileId)
       const blobUrl = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = blobUrl

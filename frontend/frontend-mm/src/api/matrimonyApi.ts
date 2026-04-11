@@ -177,9 +177,9 @@ export const matrimonyApi = {
     }
   },
 
-  async getProfileById(profileId: string) {
+  async getProfileByReferenceId(referenceId: string) {
     const response = await privateApi.get<ApiSuccessResponse<MatrimonyProfileDetail>>(
-      `/api/users/profile/extended/${profileId}`,
+      `/api/users/profile/extended/${referenceId}`,
     )
     return {
       ...response.data,

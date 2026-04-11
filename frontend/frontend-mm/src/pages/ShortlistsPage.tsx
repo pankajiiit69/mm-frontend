@@ -91,7 +91,7 @@ export function ShortlistsPage() {
               educationLabel={displayValue(profile.education, educationMap)}
               occupationLabel={displayValue(profile.occupation, occupationMap)}
               avatarGender={inferredCardGender}
-              onOpen={() => navigate(`/profiles/${profile.profileId}`)}
+              onOpen={() => navigate(`/profiles/${profile.referenceId}`)}
               actions={
                 <>
                 <button type="button" onClick={() => void onRemove(profile.profileId)}>

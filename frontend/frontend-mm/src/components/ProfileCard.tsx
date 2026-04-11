@@ -11,6 +11,7 @@ interface ProfileCardProps {
   occupationLabel?: string
   avatarGender?: Gender
   actions: ReactNode
+  cornerAction?: ReactNode
   onOpen?: () => void
 }
 
@@ -21,6 +22,7 @@ export function ProfileCard({
   occupationLabel,
   avatarGender,
   actions,
+  cornerAction,
   onOpen,
 }: ProfileCardProps) {
   const resolvedGender = profile.gender ?? avatarGender
@@ -36,7 +38,7 @@ export function ProfileCard({
 
   const handleCardClick = (event: React.MouseEvent<HTMLElement>) => {
     if (!onOpen) return
-    if ((event.target as HTMLElement).closest('.inline-actions')) {
+    if ((event.target as HTMLElement).closest('.inline-actions, .profile-card-corner-action')) {
       return
     }
     onOpen()
@@ -47,7 +49,7 @@ export function ProfileCard({
     if (event.key !== 'Enter' && event.key !== ' ') {
       return
     }
-    if ((event.target as HTMLElement).closest('.inline-actions')) {
+    if ((event.target as HTMLElement).closest('.inline-actions, .profile-card-corner-action')) {
       return
     }
     event.preventDefault()
@@ -62,11 +64,7 @@ export function ProfileCard({
       role={onOpen ? 'button' : undefined}
       tabIndex={onOpen ? 0 : undefined}
     >
-      {profile.verified && (
-        <span className="profile-card-verified-badge" aria-label="Verified profile" title="Verified profile">
-          ✓
-        </span>
-      )}
+      {cornerAction && <div className="profile-card-corner-action">{cornerAction}</div>}
       {!showAvatar ? (
         <PhotoIdentifierImage
           className="profile-card-image"
@@ -85,7 +83,14 @@ export function ProfileCard({
           <GenderAvatarArtwork gender={resolvedGender} />
         </div>
       )}
-      <h3>{profile.fullName}</h3>
+      <div className="profile-card-title-row">
+        <h3>{profile.fullName}</h3>
+        {profile.verified && (
+          <span className="profile-card-verified-badge" aria-label="Verified profile" title="Verified profile">
+            ✓
+          </span>
+        )}
+      </div>
       <p>Ref: {profile.referenceId}</p>
       <p>
         {profile.age} years • {formatEnumLabel(profile.maritalStatus)}

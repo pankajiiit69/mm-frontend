@@ -6,6 +6,10 @@ info:
     OpenAPI contract for Matrimony backend domain APIs.
     Authentication and authorization endpoints are intentionally excluded
     and are served by the userauth module.
+  contact:
+    name: Matrimony Support
+    url: https://matrimony.local
+    email: support@matrimony.local
 servers:
   - url: http://localhost:8085
     description: Local mm backend
@@ -803,18 +807,18 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
 
-  /api/users/profile/extended/{profileId}:
+  /api/users/profile/extended/{referenceId}:
     get:
       tags: [UserProfile]
-      summary: Get profile details by profile id
-      operationId: getMatrimonyProfileById
+      summary: Get profile details by reference id
+      operationId: getMatrimonyProfileByReferenceId
       parameters:
-        - name: profileId
+        - name: referenceId
           in: path
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            pattern: '^VVK[MFO][A-Z]{2}[0-9]{4}$'
       responses:
         '200':
           description: Profile fetched
@@ -938,6 +942,19 @@ components:
         compatibilityScore:
           type: number
           format: double
+        shortlisted:
+          type: boolean
+          description: Whether the requesting user has shortlisted this profile
+        interestSentStatus:
+          nullable: true
+          description: Status of interest sent by the requesting user to this profile
+          allOf:
+            - $ref: '#/components/schemas/InterestStatus'
+        interestReceivedStatus:
+          nullable: true
+          description: Status of interest received by the requesting user from this profile
+          allOf:
+            - $ref: '#/components/schemas/InterestStatus'
 
     ProfileDetail:
       allOf:
@@ -1066,6 +1083,14 @@ components:
         toProfileId:
           type: integer
           format: int64
+        fromReferenceId:
+          type: string
+          nullable: true
+          example: VVKMAA0001
+        toReferenceId:
+          type: string
+          nullable: true
+          example: VVKFAA0001
         status:
           $ref: '#/components/schemas/InterestStatus'
         message:

@@ -16,7 +16,7 @@ function resolvePageTitle(pathname: string, profilePageTitle: string) {
   if (pathname === '/admin/users') return 'Users'
   if (pathname === '/admin/profiles') return 'Profiles'
   if (pathname === '/admin/picklists') return 'Picklists'
-  if (matchPath('/profiles/:profileId', pathname)) return 'Profile Details'
+  if (matchPath('/profiles/:referenceId', pathname)) return 'Profile Details'
   if (pathname === '/login') return 'Sign In'
   if (pathname === '/register') return 'Register'
   if (pathname === '/reset-password') return 'Reset Password'

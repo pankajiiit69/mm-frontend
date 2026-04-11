@@ -23,7 +23,7 @@ export function AppRouter() {
       <Route element={<Layout />}>
         <Route element={<ProtectedRoute allowedRoles={['USER']} />}>
           <Route index element={<HomePage />} />
-          <Route path="/profiles/:profileId" element={<ProfileDetailPage />} />
+          <Route path="/profiles/:referenceId" element={<ProfileDetailPage />} />
           <Route path="/shortlists" element={<ShortlistsPage />} />
           <Route path="/interests" element={<InterestsPage />} />
           <Route path="/relation" element={<RelationPage />} />
