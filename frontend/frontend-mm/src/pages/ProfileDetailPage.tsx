@@ -161,7 +161,7 @@ export function ProfileDetailPage() {
 
               <div className="stack">
                 <strong>Biodata (PDF)</strong>
-                {profile.biodataUrl ? (
+                {profile.biodataIdentifier ? (
                   <div className="inline-actions">
                     <span className="info-text">Available</span>
                     <button

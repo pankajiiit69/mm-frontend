@@ -83,7 +83,7 @@ export function ProfilePage() {
   const [isUploadingBiodata, setIsUploadingBiodata] = useState(false)
   const [isDownloadingBiodata, setIsDownloadingBiodata] = useState(false)
   const [pendingProfilePhotoFile, setPendingProfilePhotoFile] = useState<File | null>(null)
-  const [biodataUrl, setBiodataUrl] = useState('')
+  const [biodataIdentifier, setBiodataIdentifier] = useState('')
   const [referenceId, setReferenceId] = useState('')
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
   const profilePhotoInputRef = useRef<HTMLInputElement>(null)
@@ -170,7 +170,7 @@ export function ProfilePage() {
       setBio(profile.bio ?? '')
       setProfilePhotoIdentifier(profile.profilePhotoIdentifier ?? '')
       setProfilePhotoFallbackUrl(profile.profilePhotoUrl ?? '')
-      setBiodataUrl(profile.biodataUrl ?? '')
+      setBiodataIdentifier(profile.biodataIdentifier ?? '')
       setProfileRelation(profile.relationToUser ?? null)
       setPreferredCity(profile.preference?.preferredCity ?? '')
       setPreferredReligion(resolvePicklistItem(religionOptions, profile.preference?.preferredReligion ?? ''))
@@ -244,7 +244,7 @@ export function ProfilePage() {
       setBio(profile.bio ?? '')
       setProfilePhotoIdentifier(profile.profilePhotoIdentifier ?? '')
       setProfilePhotoFallbackUrl(profile.profilePhotoUrl ?? '')
-      setBiodataUrl(profile.biodataUrl ?? '')
+      setBiodataIdentifier(profile.biodataIdentifier ?? '')
       setProfileRelation(profile.relationToUser ?? null)
       setPreferredCity(profile.preference?.preferredCity ?? '')
       setPreferredReligion(resolvePicklistItem(religionOptions, profile.preference?.preferredReligion ?? ''))
@@ -354,7 +354,7 @@ export function ProfilePage() {
     try {
       const response = await matrimonyApi.uploadBiodata(file)
       const refreshedProfile = await matrimonyApi.getMyProfile()
-      setBiodataUrl(refreshedProfile.data.biodataUrl ?? '')
+      setBiodataIdentifier(refreshedProfile.data.biodataIdentifier ?? '')
       showToast(response.message || 'Biodata uploaded successfully.', 'success')
     } catch (err) {
       showToast(extractApiError(err, 'Unable to upload biodata. Please try again.'), 'error')
@@ -371,7 +371,7 @@ export function ProfilePage() {
 
     try {
       const response = await matrimonyApi.deleteMyBiodata()
-      setBiodataUrl('')
+      setBiodataIdentifier('')
       showToast(response.message || 'Biodata deleted successfully.', 'success')
     } catch (err) {
       showToast(extractApiError(err, 'Unable to delete biodata. Please try again.'), 'error')
@@ -379,7 +379,7 @@ export function ProfilePage() {
   }
 
   const onDownloadBiodata = async () => {
-    if (!biodataUrl) {
+    if (!biodataIdentifier) {
       showToast('Biodata not available.', 'error')
       return
     }
@@ -712,7 +712,7 @@ export function ProfilePage() {
           <div className="stack">
             <h3>Biodata (PDF)</h3>
             <div className="biodata-row">
-              {!biodataUrl && (
+              {!biodataIdentifier && (
                 <button
                   type="button"
                   className="biodata-icon-button"
@@ -737,7 +737,7 @@ export function ProfilePage() {
                   })
                 }}
               />
-              {biodataUrl ? (
+              {biodataIdentifier ? (
                 <button
                   type="button"
                   className="biodata-file-link"
@@ -749,7 +749,7 @@ export function ProfilePage() {
               ) : (
                 <span className="info-text">No biodata uploaded</span>
               )}
-              {biodataUrl && (
+              {biodataIdentifier && (
                 <>
                   <button
                     type="button"
