@@ -119,7 +119,6 @@ export function LoginPage() {
 
           {(hasGoogleClientId || hasTelegramBotName) && (
             <div className="stack auth-social-block">
-              <p className="auth-social-title">Or continue with</p>
               {hasGoogleClientId && (
                 <GoogleLogin
                   onSuccess={(response) => void onGoogleSuccess(response)}
