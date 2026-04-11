@@ -74,6 +74,7 @@ function normalizeProfileDetail(profile: MatrimonyProfileDetail): MatrimonyProfi
     ...profile,
     profilePhotoIdentifier: profile.profilePhotoIdentifier,
     profilePhotoUrl: normalizePhotoUrl(profile.profilePhotoUrl),
+    biodataIdentifier: profile.biodataIdentifier,
     biodataUrl: normalizePhotoUrl(profile.biodataUrl),
     galleryPhotos: profile.galleryPhotos?.map(normalizePhoto) ?? [],
   }

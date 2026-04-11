@@ -51,6 +51,7 @@ export interface MatrimonyProfileDetail extends MatrimonyProfileSummary {
   smoking?: boolean
   drinking?: boolean
   bio?: string
+  biodataIdentifier?: string
   biodataUrl?: string
   relationToUser?: string
   profileCompletion: number
