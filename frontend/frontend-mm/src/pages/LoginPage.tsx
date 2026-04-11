@@ -17,8 +17,8 @@ const DISCOVERY_PREFILL_ON_LOGIN_KEY = 'mm.discovery.prefillOnLogin.v1'
 export function LoginPage() {
   const { login, socialLogin, updateAuthUser } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('user@matrimony.local')
-  const [password, setPassword] = useState('password123')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const { showToast } = useToast()
 
