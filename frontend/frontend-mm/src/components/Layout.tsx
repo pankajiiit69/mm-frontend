@@ -28,6 +28,7 @@ function resolvePageTitle(pathname: string, profilePageTitle: string) {
 export function Layout() {
   const { auth, logout } = useAuth()
   const location = useLocation()
+  const hideGuestAuthActions = location.pathname === '/login' || location.pathname === '/register'
   const profileRelation = null
   const profilePageTitle = getProfilePageTitle(profileRelation)
   const profileNavLabel = getProfileNavLabel(profileRelation)
@@ -110,7 +111,7 @@ export function Layout() {
                 <span className="action-label">Logout</span>
               </button>
             </>
-          ) : (
+          ) : hideGuestAuthActions ? null : (
             <>
               <Link to="/login" className="login-icon-link topbar-action topbar-action-login">
                 <svg

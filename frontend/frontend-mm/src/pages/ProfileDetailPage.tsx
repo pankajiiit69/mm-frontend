@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { matrimonyApi } from '../api/matrimonyApi'
 import { AsyncState } from '../components/AsyncState'
 import { GenderAvatarArtwork } from '../components/GenderAvatarArtwork'
@@ -20,11 +20,24 @@ function asText(value: string | number | undefined | null, fallback = '-') {
   return normalized ? normalized : fallback
 }
 
+function asYesNo(value: boolean | undefined | null) {
+  if (value === undefined || value === null) return '-'
+  return value ? 'Yes' : 'No'
+}
+
+function asList(values: string[] | undefined, fallback = '-') {
+  if (!values || values.length === 0) return fallback
+  return values.join(', ')
+}
+
 export function ProfileDetailPage() {
   const { referenceId } = useParams<{ referenceId: string }>()
+  const navigate = useNavigate()
   const [message, setMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [isDownloadingBiodata, setIsDownloadingBiodata] = useState(false)
+  const [isShortlistBusy, setIsShortlistBusy] = useState(false)
+  const [shortlistOverride, setShortlistOverride] = useState<boolean | null>(null)
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
   const { showToast } = useToast()
 
@@ -41,7 +54,10 @@ export function ProfileDetailPage() {
     [referenceId],
     enabled,
   )
-  const profile = data
+  const profile = data?.profile
+  const connection = data?.connection
+  const isShortlisted = shortlistOverride ?? Boolean(connection?.shortlisted)
+  const hasInterest = Boolean(connection?.interestSentStatus || connection?.interestReceivedStatus)
   const lightboxImages =
     profile?.galleryPhotos?.map((photo, index) => ({
       photoIdentifier: photo.photoIdentifier,
@@ -69,17 +85,29 @@ export function ProfileDetailPage() {
     }
   }
 
-  const onShortlist = async () => {
+  const onToggleShortlist = async () => {
     if (!profile?.profileId) return
     setMessage('')
     setErrorMessage('')
+    setIsShortlistBusy(true)
+
     try {
-      const response = await matrimonyApi.addProfileToShortlist(profile.profileId)
-      setMessage(response.message || 'Profile shortlisted successfully.')
-      showToast(response.message || 'Profile shortlisted successfully.', 'success')
+      if (isShortlisted) {
+        const response = await matrimonyApi.removeProfileFromShortlist(profile.profileId)
+        setShortlistOverride(false)
+        setMessage(response.message || 'Profile removed from shortlist.')
+        showToast(response.message || 'Profile removed from shortlist.', 'success')
+      } else {
+        const response = await matrimonyApi.addProfileToShortlist(profile.profileId)
+        setShortlistOverride(true)
+        setMessage(response.message || 'Profile shortlisted successfully.')
+        showToast(response.message || 'Profile shortlisted successfully.', 'success')
+      }
     } catch (err) {
-      setErrorMessage('Unable to shortlist this profile.')
-      showToast(extractApiError(err, 'Unable to shortlist this profile.'), 'error')
+      setErrorMessage('Unable to update shortlist for this profile.')
+      showToast(extractApiError(err, 'Unable to update shortlist for this profile.'), 'error')
+    } finally {
+      setIsShortlistBusy(false)
     }
   }
 
@@ -194,16 +222,8 @@ export function ProfileDetailPage() {
                 <input value={asText(profile.dateOfBirth)} readOnly />
               </label>
               <label>
-                Religion
-                <input value={asText(profile.religion)} readOnly />
-              </label>
-              <label>
-                Mother Tongue
-                <input value={asText(profile.motherTongue)} readOnly />
-              </label>
-              <label>
-                Caste
-                <input value={asText(profile.caste)} readOnly />
+                Relation To User
+                <input value={asText(profile.relationToUser ? formatEnumLabel(profile.relationToUser) : undefined)} readOnly />
               </label>
               <label>
                 Marital Status
@@ -212,6 +232,10 @@ export function ProfileDetailPage() {
               <label>
                 City
                 <input value={asText(profile.city)} readOnly />
+              </label>
+              <label>
+                Area Code (PIN/ZIP)
+                <input value={asText(profile.areaCode)} readOnly />
               </label>
               <label>
                 State
@@ -225,13 +249,85 @@ export function ProfileDetailPage() {
                 Education
                 <input value={asText(profile.education)} readOnly />
               </label>
+            </div>
+
+            <h3>Community Details</h3>
+            <div className="toolbar-grid">
+              <label>
+                Religion
+                <input value={asText(profile.religion)} readOnly />
+              </label>
+              <label>
+                Mother Tongue
+                <input value={asText(profile.motherTongue)} readOnly />
+              </label>
+              <label>
+                Caste
+                <input value={asText(profile.caste)} readOnly />
+              </label>
+              <label>
+                Sub Caste
+                <input value={asText(profile.subCaste)} readOnly />
+              </label>
+              <label>
+                Languages Known
+                <input value={asList(profile.languagesKnown)} readOnly />
+              </label>
+            </div>
+
+            <h3>Professional Details</h3>
+            <div className="toolbar-grid">
+              <label>
+                Education
+                <input value={asText(profile.education)} readOnly />
+              </label>
               <label>
                 Occupation
                 <input value={asText(profile.occupation)} readOnly />
               </label>
               <label>
+                Employment Type
+                <input value={asText(profile.employmentType ? formatEnumLabel(profile.employmentType) : undefined)} readOnly />
+              </label>
+              <label>
+                Company Name
+                <input value={asText(profile.companyName)} readOnly />
+              </label>
+              <label>
+                Work Location
+                <input value={asText(profile.workLocation)} readOnly />
+              </label>
+              <label>
                 Annual Income (INR)
                 <input value={`₹${Math.round(profile.annualIncome ?? 0).toLocaleString('en-IN')}`} readOnly />
+              </label>
+              <label>
+                Height (cm)
+                <input value={asText(profile.heightCm)} readOnly />
+              </label>
+              <label>
+                Diet
+                <input value={asText(profile.diet ? formatEnumLabel(profile.diet) : undefined)} readOnly />
+              </label>
+              <label>
+                Smoking
+                <input value={asYesNo(profile.smoking)} readOnly />
+              </label>
+              <label>
+                Drinking
+                <input value={asYesNo(profile.drinking)} readOnly />
+              </label>
+              <label>
+                Fitness Level
+                <input value={asText(profile.fitnessLevel)} readOnly />
+              </label>
+              <label>
+                Hobbies
+                <input value={asList(profile.hobbies)} readOnly />
+              </label>
+              <label>
+                Willing To Relocate
+                <input value={asYesNo(profile.willingToRelocate)} readOnly />
               </label>
               <label>
                 Profile Completion
@@ -239,9 +335,58 @@ export function ProfileDetailPage() {
               </label>
             </div>
 
+            <h3>Horoscope Details</h3>
+            <div className="toolbar-grid">
+              <label>
+                Gothra
+                <input value={asText(profile.gothra)} readOnly />
+              </label>
+              <label>
+                Manglik
+                <input value={asYesNo(profile.manglik)} readOnly />
+              </label>
+              <label>
+                Horoscope Available
+                <input value={asYesNo(profile.horoscopeAvailable)} readOnly />
+              </label>
+            </div>
+
             <label>
               Bio
               <textarea value={asText(profile.bio, 'Not shared')} rows={4} readOnly />
+            </label>
+
+            <h3>Family Details</h3>
+            <div className="toolbar-grid">
+              <label>
+                Family Type
+                <input value={asText(profile.familyType ? formatEnumLabel(profile.familyType) : undefined)} readOnly />
+              </label>
+              <label>
+                Family Values
+                <input value={asText(profile.familyValues ? formatEnumLabel(profile.familyValues) : undefined)} readOnly />
+              </label>
+              <label>
+                Father's Occupation
+                <input value={asText(profile.fatherOccupation)} readOnly />
+              </label>
+              <label>
+                Mother's Occupation
+                <input value={asText(profile.motherOccupation)} readOnly />
+              </label>
+              <label>
+                Siblings Count
+                <input value={asText(profile.siblingsCount)} readOnly />
+              </label>
+              <label>
+                Family Location
+                <input value={asText(profile.familyLocation)} readOnly />
+              </label>
+            </div>
+
+            <label>
+              About Family
+              <textarea value={asText(profile.aboutFamily, 'Not shared')} rows={3} readOnly />
             </label>
 
             <h3>Partner Preferences</h3>
@@ -263,6 +408,22 @@ export function ProfileDetailPage() {
                 <input value={asText(profile.preference?.preferredEducation)} readOnly />
               </label>
               <label>
+                Preferred Occupation
+                <input value={asText(profile.preference?.preferredOccupation)} readOnly />
+              </label>
+              <label>
+                Preferred Location
+                <input value={asText(profile.preference?.preferredLocation)} readOnly />
+              </label>
+              <label>
+                Preferred Min Height (cm)
+                <input value={asText(profile.preference?.preferredHeightMinCm)} readOnly />
+              </label>
+              <label>
+                Preferred Max Height (cm)
+                <input value={asText(profile.preference?.preferredHeightMaxCm)} readOnly />
+              </label>
+              <label>
                 Preferred Min Age
                 <input value={asText(profile.preference?.minAge)} readOnly />
               </label>
@@ -270,11 +431,45 @@ export function ProfileDetailPage() {
                 Preferred Max Age
                 <input value={asText(profile.preference?.maxAge)} readOnly />
               </label>
+              <label>
+                Must Haves
+                <input value={asList(profile.preference?.mustHaves)} readOnly />
+              </label>
+              <label>
+                Deal Breakers
+                <input value={asList(profile.preference?.dealBreakers)} readOnly />
+              </label>
+            </div>
+
+            <h3>Privacy and Verification</h3>
+            <div className="toolbar-grid">
+              <label>
+                Profile Visibility
+                <input value={asText(profile.profileVisibility ? formatEnumLabel(profile.profileVisibility) : undefined)} readOnly />
+              </label>
+              <label>
+                Photo Visibility
+                <input value={asText(profile.photoVisibility ? formatEnumLabel(profile.photoVisibility) : undefined)} readOnly />
+              </label>
+              <label>
+                Contact Visibility
+                <input value={asText(profile.contactVisibility ? formatEnumLabel(profile.contactVisibility) : undefined)} readOnly />
+              </label>
+              <label>
+                ID Verified
+                <input value={asYesNo(profile.idVerified)} readOnly />
+              </label>
             </div>
 
             <div className="inline-actions">
-              <button onClick={() => void onSendInterest()}>Send Interest</button>
-              <button onClick={() => void onShortlist()}>Add to Shortlist</button>
+              {hasInterest ? (
+                <button type="button" onClick={() => navigate('/interests')}>View Interest</button>
+              ) : (
+                <button type="button" onClick={() => void onSendInterest()}>Send Interest</button>
+              )}
+              <button type="button" disabled={isShortlistBusy} onClick={() => void onToggleShortlist()}>
+                {isShortlisted ? 'Remove from Shortlist' : 'Add to Shortlist'}
+              </button>
             </div>
 
             {message && <p className="success-text">{message}</p>}

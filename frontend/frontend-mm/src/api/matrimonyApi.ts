@@ -10,12 +10,20 @@ import type {
   DiscoveryQuery,
   Interest,
   InterestStatus,
+  ProfileDetailWithConnection,
   MatrimonyProfileDetail,
   MatrimonyProfileSummary,
   Photo,
   PicklistEntry,
   PicklistItem,
   SuccessMessageResponse,
+  UpdateBasicDetailsRequest,
+  UpdateCommunityDetailsRequest,
+  UpdateFamilyDetailsRequest,
+  UpdateHoroscopeDetailsRequest,
+  UpdatePartnerPreferencesRequest,
+  UpdatePrivacyVerificationRequest,
+  UpdateProfessionalDetailsRequest,
   UpsertPicklistEntryRequest,
   UpsertMyProfileRequest,
   VerificationStatus,
@@ -177,13 +185,93 @@ export const matrimonyApi = {
     }
   },
 
-  async getProfileByReferenceId(referenceId: string) {
-    const response = await privateApi.get<ApiSuccessResponse<MatrimonyProfileDetail>>(
-      `/api/users/profile/extended/${referenceId}`,
+  async updateMyProfileBasicDetails(payload: UpdateBasicDetailsRequest) {
+    const response = await privateApi.patch<ApiSuccessResponse<MatrimonyProfileDetail>>(
+      '/api/users/profile/extended/me/basic-details',
+      payload,
     )
     return {
       ...response.data,
       data: normalizeProfileDetail(response.data.data),
+    }
+  },
+
+  async updateMyProfileCommunityDetails(payload: UpdateCommunityDetailsRequest) {
+    const response = await privateApi.patch<ApiSuccessResponse<MatrimonyProfileDetail>>(
+      '/api/users/profile/extended/me/community-details',
+      payload,
+    )
+    return {
+      ...response.data,
+      data: normalizeProfileDetail(response.data.data),
+    }
+  },
+
+  async updateMyProfileProfessionalDetails(payload: UpdateProfessionalDetailsRequest) {
+    const response = await privateApi.patch<ApiSuccessResponse<MatrimonyProfileDetail>>(
+      '/api/users/profile/extended/me/professional-details',
+      payload,
+    )
+    return {
+      ...response.data,
+      data: normalizeProfileDetail(response.data.data),
+    }
+  },
+
+  async updateMyProfileHoroscopeDetails(payload: UpdateHoroscopeDetailsRequest) {
+    const response = await privateApi.patch<ApiSuccessResponse<MatrimonyProfileDetail>>(
+      '/api/users/profile/extended/me/horoscope-details',
+      payload,
+    )
+    return {
+      ...response.data,
+      data: normalizeProfileDetail(response.data.data),
+    }
+  },
+
+  async updateMyProfileFamilyDetails(payload: UpdateFamilyDetailsRequest) {
+    const response = await privateApi.patch<ApiSuccessResponse<MatrimonyProfileDetail>>(
+      '/api/users/profile/extended/me/family-details',
+      payload,
+    )
+    return {
+      ...response.data,
+      data: normalizeProfileDetail(response.data.data),
+    }
+  },
+
+  async updateMyProfilePartnerPreferences(payload: UpdatePartnerPreferencesRequest) {
+    const response = await privateApi.patch<ApiSuccessResponse<MatrimonyProfileDetail>>(
+      '/api/users/profile/extended/me/partner-preferences',
+      payload,
+    )
+    return {
+      ...response.data,
+      data: normalizeProfileDetail(response.data.data),
+    }
+  },
+
+  async updateMyProfilePrivacySettings(payload: UpdatePrivacyVerificationRequest) {
+    const response = await privateApi.patch<ApiSuccessResponse<MatrimonyProfileDetail>>(
+      '/api/users/profile/extended/me/privacy-settings',
+      payload,
+    )
+    return {
+      ...response.data,
+      data: normalizeProfileDetail(response.data.data),
+    }
+  },
+
+  async getProfileByReferenceId(referenceId: string) {
+    const response = await privateApi.get<ApiSuccessResponse<ProfileDetailWithConnection>>(
+      `/api/users/profile/extended/${referenceId}`,
+    )
+    return {
+      ...response.data,
+      data: {
+        profile: normalizeProfileDetail(response.data.data.profile),
+        connection: response.data.data.connection,
+      },
     }
   },
 

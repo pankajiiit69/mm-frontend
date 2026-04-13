@@ -807,6 +807,153 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
 
+  /api/users/profile/extended/me/basic-details:
+    patch:
+      tags: [UserProfile]
+      summary: Update current user's basic profile details
+      operationId: updateMyMatrimonyProfileBasicDetails
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBasicDetailsRequest'
+      responses:
+        '200':
+          description: Basic details saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/users/profile/extended/me/community-details:
+    patch:
+      tags: [UserProfile]
+      summary: Update current user's community details
+      operationId: updateMyMatrimonyProfileCommunityDetails
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCommunityDetailsRequest'
+      responses:
+        '200':
+          description: Community details saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/users/profile/extended/me/professional-details:
+    patch:
+      tags: [UserProfile]
+      summary: Update current user's professional details
+      operationId: updateMyMatrimonyProfileProfessionalDetails
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfessionalDetailsRequest'
+      responses:
+        '200':
+          description: Professional details saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/users/profile/extended/me/horoscope-details:
+    patch:
+      tags: [UserProfile]
+      summary: Update current user's horoscope details
+      operationId: updateMyMatrimonyProfileHoroscopeDetails
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHoroscopeDetailsRequest'
+      responses:
+        '200':
+          description: Horoscope details saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/users/profile/extended/me/family-details:
+    patch:
+      tags: [UserProfile]
+      summary: Update current user's family details
+      operationId: updateMyMatrimonyProfileFamilyDetails
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFamilyDetailsRequest'
+      responses:
+        '200':
+          description: Family details saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/users/profile/extended/me/partner-preferences:
+    patch:
+      tags: [UserProfile]
+      summary: Update current user's partner preferences
+      operationId: updateMyMatrimonyProfilePartnerPreferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePartnerPreferencesRequest'
+      responses:
+        '200':
+          description: Partner preferences saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/users/profile/extended/me/privacy-settings:
+    patch:
+      tags: [UserProfile]
+      summary: Update current user's privacy and verification settings
+      operationId: updateMyMatrimonyProfilePrivacySettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePrivacyVerificationRequest'
+      responses:
+        '200':
+          description: Privacy settings saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDetailResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
   /api/users/profile/extended/{referenceId}:
     get:
       tags: [UserProfile]
@@ -825,7 +972,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProfileDetailResponse'
+                $ref: '#/components/schemas/ProfileDetailWithConnectionResponse'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -882,6 +1029,34 @@ components:
       type: string
       enum: [SENT, ACCEPTED, DECLINED, WITHDRAWN]
 
+    DietType:
+      type: string
+      enum: [VEGETARIAN, EGGETARIAN, NON_VEGETARIAN, VEGAN, JAIN, OCCASIONALLY_NON_VEG]
+
+    EmploymentType:
+      type: string
+      enum: [PRIVATE, GOVERNMENT, BUSINESS, SELF_EMPLOYED, NOT_WORKING, STUDENT]
+
+    FamilyType:
+      type: string
+      enum: [NUCLEAR, JOINT, EXTENDED]
+
+    FamilyValues:
+      type: string
+      enum: [TRADITIONAL, MODERATE, LIBERAL]
+
+    ProfileVisibility:
+      type: string
+      enum: [PUBLIC, MEMBERS_ONLY, HIDDEN]
+
+    PhotoVisibility:
+      type: string
+      enum: [VISIBLE_TO_ALL, MEMBERS_ONLY, ON_REQUEST]
+
+    ContactVisibility:
+      type: string
+      enum: [VISIBLE_TO_MATCHES, ON_ACCEPTED_INTEREST, HIDDEN]
+
     PartnerPreference:
       type: object
       properties:
@@ -910,6 +1085,38 @@ components:
         preferredEducation:
           type: string
           maxLength: 100
+        preferredOccupation:
+          type: string
+          maxLength: 100
+        preferredLocation:
+          type: string
+          maxLength: 120
+        preferredHeightMinCm:
+          type: integer
+          minimum: 120
+          maximum: 230
+        preferredHeightMaxCm:
+          type: integer
+          minimum: 120
+          maximum: 230
+        preferredDiet:
+          $ref: '#/components/schemas/DietType'
+        preferredSmoking:
+          type: boolean
+        preferredDrinking:
+          type: boolean
+        mustHaves:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 100
+        dealBreakers:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 100
 
     ProfileSummary:
       type: object
@@ -967,32 +1174,117 @@ components:
             dateOfBirth:
               type: string
               format: date
+              description: Must represent an age between 18 and 80 years.
             motherTongue:
               type: string
+              maxLength: 60
+            languagesKnown:
+              type: array
+              maxItems: 10
+              items:
+                type: string
+                maxLength: 40
             caste:
               type: string
+              maxLength: 60
+            subCaste:
+              type: string
+              maxLength: 60
+            gothra:
+              type: string
+              maxLength: 60
+            manglik:
+              type: boolean
+            horoscopeAvailable:
+              type: boolean
             country:
               type: string
+              maxLength: 80
             state:
               type: string
+              maxLength: 80
+            areaCode:
+              type: string
+              maxLength: 20
+            workLocation:
+              type: string
+              maxLength: 120
+            heightCm:
+              type: integer
+              minimum: 120
+              maximum: 230
+            bodyType:
+              type: string
+              maxLength: 30
+            complexion:
+              type: string
+              maxLength: 30
             annualIncome:
               type: number
-            diet:
+              minimum: 0
+            employmentType:
+              $ref: '#/components/schemas/EmploymentType'
+            companyName:
               type: string
+              maxLength: 120
+            diet:
+              $ref: '#/components/schemas/DietType'
             smoking:
               type: boolean
             drinking:
               type: boolean
+            fitnessLevel:
+              type: string
+              maxLength: 40
+            hobbies:
+              type: array
+              maxItems: 20
+              items:
+                type: string
+                maxLength: 50
+            willingToRelocate:
+              type: boolean
             bio:
               type: string
+              minLength: 50
               maxLength: 2000
             relationToUser:
               type: string
               maxLength: 60
+            familyType:
+              $ref: '#/components/schemas/FamilyType'
+            familyValues:
+              $ref: '#/components/schemas/FamilyValues'
+            fatherOccupation:
+              type: string
+              maxLength: 100
+            motherOccupation:
+              type: string
+              maxLength: 100
+            siblingsCount:
+              type: integer
+              minimum: 0
+              maximum: 20
+            familyLocation:
+              type: string
+              maxLength: 120
+            aboutFamily:
+              type: string
+              maxLength: 1000
+            profileVisibility:
+              $ref: '#/components/schemas/ProfileVisibility'
+            photoVisibility:
+              $ref: '#/components/schemas/PhotoVisibility'
+            contactVisibility:
+              $ref: '#/components/schemas/ContactVisibility'
+            idVerified:
+              type: boolean
             biodataIdentifier:
               type: string
             profileCompletion:
               type: integer
+              minimum: 0
+              maximum: 100
             galleryPhotos:
               type: array
               items:
@@ -1001,6 +1293,203 @@ components:
               $ref: '#/components/schemas/PartnerPreference'
 
     UpsertMyProfileRequest:
+      type: object
+      required:
+        - fullName
+        - gender
+        - dateOfBirth
+        - maritalStatus
+        - relationToUser
+        - city
+        - country
+        - bio
+      x-formLayout:
+        title: Matrimony Profile Creation
+        version: 1
+        steps:
+          - step: 1
+            key: essentials
+            title: Essentials
+            sections: [basicDetails]
+            requiredFields: [fullName, gender, dateOfBirth, maritalStatus, relationToUser, city, country, bio, profilePhotoIdentifier]
+          - step: 2
+            key: trustAndLifestyle
+            title: Trust and Lifestyle
+            sections: [communityDetails, professionalDetails, horoscopeDetails]
+          - step: 3
+            key: matchingDetails
+            title: Family and Match Preferences
+            sections: [familyDetails, partnerPreferences]
+          - step: 4
+            key: privacyControls
+            title: Privacy and Verification
+            sections: [privacyAndVerification]
+      x-sectionOrder:
+        - key: basicDetails
+          title: Basic Details
+          fields: [fullName, gender, dateOfBirth, maritalStatus, city, areaCode, state, country, relationToUser, bio, profilePhotoIdentifier]
+        - key: communityDetails
+          title: Community Details
+          fields: [religion, motherTongue, caste, subCaste, languagesKnown]
+        - key: professionalDetails
+          title: Professional Details
+          fields: [education, occupation, employmentType, companyName, workLocation, annualIncome, heightCm, bodyType, complexion, diet, smoking, drinking, fitnessLevel, hobbies, willingToRelocate]
+        - key: horoscopeDetails
+          title: Horoscope Details
+          fields: [gothra, manglik, horoscopeAvailable]
+        - key: familyDetails
+          title: Family Details
+          fields: [familyType, familyValues, fatherOccupation, motherOccupation, siblingsCount, familyLocation, aboutFamily]
+        - key: partnerPreferences
+          title: Partner Preferences
+          fields: [preference]
+        - key: privacyAndVerification
+          title: Privacy and Verification
+          fields: [profileVisibility, photoVisibility, contactVisibility, idVerified]
+      x-validationMessages:
+        fullName: Full name must be between 2 and 120 characters.
+        dateOfBirth: You must be between 18 and 80 years old to create a matrimony profile.
+        bio: Bio must be between 50 and 2000 characters.
+        annualIncome: Annual income cannot be negative.
+        heightCm: Height must be between 120 and 230 cm.
+        siblingsCount: Siblings count must be between 0 and 20.
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+          maxLength: 120
+        gender:
+          $ref: '#/components/schemas/Gender'
+        dateOfBirth:
+          type: string
+          format: date
+          description: Must represent an age between 18 and 80 years.
+        motherTongue:
+          type: string
+          maxLength: 60
+        languagesKnown:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 40
+        religion:
+          type: string
+          maxLength: 60
+        caste:
+          type: string
+          maxLength: 60
+        subCaste:
+          type: string
+          maxLength: 60
+        gothra:
+          type: string
+          maxLength: 60
+        manglik:
+          type: boolean
+        horoscopeAvailable:
+          type: boolean
+        maritalStatus:
+          $ref: '#/components/schemas/MaritalStatus'
+        education:
+          type: string
+          maxLength: 100
+        occupation:
+          type: string
+          maxLength: 100
+        employmentType:
+          $ref: '#/components/schemas/EmploymentType'
+        companyName:
+          type: string
+          maxLength: 120
+        annualIncome:
+          type: number
+          minimum: 0
+        city:
+          type: string
+          minLength: 2
+          maxLength: 80
+        areaCode:
+          type: string
+          maxLength: 20
+        state:
+          type: string
+          maxLength: 80
+        country:
+          type: string
+          minLength: 2
+          maxLength: 80
+        workLocation:
+          type: string
+          maxLength: 120
+        heightCm:
+          type: integer
+          minimum: 120
+          maximum: 230
+        bodyType:
+          type: string
+          maxLength: 30
+        complexion:
+          type: string
+          maxLength: 30
+        diet:
+          $ref: '#/components/schemas/DietType'
+        smoking:
+          type: boolean
+        drinking:
+          type: boolean
+        fitnessLevel:
+          type: string
+          maxLength: 40
+        hobbies:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 50
+        willingToRelocate:
+          type: boolean
+        bio:
+          type: string
+          minLength: 50
+          maxLength: 2000
+        relationToUser:
+          type: string
+          maxLength: 60
+        familyType:
+          $ref: '#/components/schemas/FamilyType'
+        familyValues:
+          $ref: '#/components/schemas/FamilyValues'
+        fatherOccupation:
+          type: string
+          maxLength: 100
+        motherOccupation:
+          type: string
+          maxLength: 100
+        siblingsCount:
+          type: integer
+          minimum: 0
+          maximum: 20
+        familyLocation:
+          type: string
+          maxLength: 120
+        aboutFamily:
+          type: string
+          maxLength: 1000
+        profilePhotoIdentifier:
+          type: string
+        profileVisibility:
+          $ref: '#/components/schemas/ProfileVisibility'
+        photoVisibility:
+          $ref: '#/components/schemas/PhotoVisibility'
+        contactVisibility:
+          $ref: '#/components/schemas/ContactVisibility'
+        idVerified:
+          type: boolean
+        preference:
+          $ref: '#/components/schemas/PartnerPreference'
+
+    UpdateBasicDetailsRequest:
       type: object
       properties:
         fullName:
@@ -1012,45 +1501,154 @@ components:
         dateOfBirth:
           type: string
           format: date
-        motherTongue:
+        maritalStatus:
+          $ref: '#/components/schemas/MaritalStatus'
+        city:
+          type: string
+          minLength: 2
+          maxLength: 80
+        areaCode:
+          type: string
+          maxLength: 20
+        state:
+          type: string
+          maxLength: 80
+        country:
+          type: string
+          minLength: 2
+          maxLength: 80
+        relationToUser:
           type: string
           maxLength: 60
+        bio:
+          type: string
+          minLength: 50
+          maxLength: 2000
+        profilePhotoIdentifier:
+          type: string
+
+    UpdateCommunityDetailsRequest:
+      type: object
+      properties:
         religion:
+          type: string
+          maxLength: 60
+        motherTongue:
           type: string
           maxLength: 60
         caste:
           type: string
           maxLength: 60
-        maritalStatus:
-          $ref: '#/components/schemas/MaritalStatus'
+        subCaste:
+          type: string
+          maxLength: 60
+        languagesKnown:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 40
+
+    UpdateProfessionalDetailsRequest:
+      type: object
+      properties:
         education:
           type: string
           maxLength: 100
         occupation:
           type: string
           maxLength: 100
+        employmentType:
+          $ref: '#/components/schemas/EmploymentType'
+        companyName:
+          type: string
+          maxLength: 120
+        workLocation:
+          type: string
+          maxLength: 120
         annualIncome:
           type: number
           minimum: 0
-        city:
+        heightCm:
+          type: integer
+          minimum: 120
+          maximum: 230
+        bodyType:
           type: string
-          maxLength: 80
-        state:
+          maxLength: 30
+        complexion:
           type: string
-          maxLength: 80
-        country:
+          maxLength: 30
+        diet:
+          $ref: '#/components/schemas/DietType'
+        smoking:
+          type: boolean
+        drinking:
+          type: boolean
+        fitnessLevel:
           type: string
-          maxLength: 80
-        bio:
-          type: string
-          maxLength: 2000
-        relationToUser:
+          maxLength: 40
+        hobbies:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 50
+        willingToRelocate:
+          type: boolean
+
+    UpdateHoroscopeDetailsRequest:
+      type: object
+      properties:
+        gothra:
           type: string
           maxLength: 60
-        profilePhotoIdentifier:
+        manglik:
+          type: boolean
+        horoscopeAvailable:
+          type: boolean
+
+    UpdateFamilyDetailsRequest:
+      type: object
+      properties:
+        familyType:
+          $ref: '#/components/schemas/FamilyType'
+        familyValues:
+          $ref: '#/components/schemas/FamilyValues'
+        fatherOccupation:
           type: string
+          maxLength: 100
+        motherOccupation:
+          type: string
+          maxLength: 100
+        siblingsCount:
+          type: integer
+          minimum: 0
+          maximum: 20
+        familyLocation:
+          type: string
+          maxLength: 120
+        aboutFamily:
+          type: string
+          maxLength: 1000
+
+    UpdatePartnerPreferencesRequest:
+      type: object
+      properties:
         preference:
           $ref: '#/components/schemas/PartnerPreference'
+
+    UpdatePrivacyVerificationRequest:
+      type: object
+      properties:
+        profileVisibility:
+          $ref: '#/components/schemas/ProfileVisibility'
+        photoVisibility:
+          $ref: '#/components/schemas/PhotoVisibility'
+        contactVisibility:
+          $ref: '#/components/schemas/ContactVisibility'
+        idVerified:
+          type: boolean
 
     ProfilePage:
       type: object
@@ -1173,6 +1771,44 @@ components:
           type: string
         data:
           $ref: '#/components/schemas/ProfileDetail'
+
+    ProfileConnection:
+      type: object
+      required: [shortlisted]
+      properties:
+        shortlisted:
+          type: boolean
+        interestSentStatus:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/InterestStatus'
+        interestReceivedStatus:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/InterestStatus'
+
+    ProfileDetailWithConnection:
+      type: object
+      required: [profile, connection]
+      properties:
+        profile:
+          $ref: '#/components/schemas/ProfileDetail'
+        connection:
+          $ref: '#/components/schemas/ProfileConnection'
+
+    ProfileDetailWithConnectionResponse:
+      type: object
+      required: [timestamp, status, message, data]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/ProfileDetailWithConnection'
 
     ProfilePageResponse:
       type: object

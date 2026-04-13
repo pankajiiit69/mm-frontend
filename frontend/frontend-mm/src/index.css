@@ -213,6 +213,28 @@ button:disabled {
   align-items: end;
 }
 
+.toolbar-grid-full-span {
+  grid-column: auto;
+}
+
+.professional-details-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.professional-details-grid > :last-child {
+  grid-column: 1 / -1;
+}
+
+.professional-details-grid > :last-child:nth-child(even) {
+  grid-column: auto;
+}
+
+@media (max-width: 720px) {
+  .professional-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -1056,6 +1078,20 @@ button:disabled {
 
 .info-text {
   color: #4b5563;
+}
+
+.section-status-indicator {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid #fbbf24;
+  border-radius: 999px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.1;
+  vertical-align: middle;
 }
 
 .checkbox-label {

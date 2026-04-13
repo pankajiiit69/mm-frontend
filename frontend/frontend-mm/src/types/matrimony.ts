@@ -4,6 +4,32 @@ export type MaritalStatus = 'NEVER_MARRIED' | 'DIVORCED' | 'WIDOWED' | 'AWAITING
 
 export type InterestStatus = 'SENT' | 'ACCEPTED' | 'DECLINED' | 'WITHDRAWN'
 
+export type DietType =
+  | 'VEGETARIAN'
+  | 'EGGETARIAN'
+  | 'NON_VEGETARIAN'
+  | 'VEGAN'
+  | 'JAIN'
+  | 'OCCASIONALLY_NON_VEG'
+
+export type EmploymentType =
+  | 'PRIVATE'
+  | 'GOVERNMENT'
+  | 'BUSINESS'
+  | 'SELF_EMPLOYED'
+  | 'NOT_WORKING'
+  | 'STUDENT'
+
+export type FamilyType = 'NUCLEAR' | 'JOINT' | 'EXTENDED'
+
+export type FamilyValues = 'TRADITIONAL' | 'MODERATE' | 'LIBERAL'
+
+export type ProfileVisibility = 'PUBLIC' | 'MEMBERS_ONLY' | 'HIDDEN'
+
+export type PhotoVisibility = 'VISIBLE_TO_ALL' | 'MEMBERS_ONLY' | 'ON_REQUEST'
+
+export type ContactVisibility = 'VISIBLE_TO_MATCHES' | 'ON_ACCEPTED_INTEREST' | 'HIDDEN'
+
 export type VerificationStatus = 'PENDING_EMAIL' | 'PENDING_PHONE' | 'PENDING_PROFILE' | 'PROFILE_NOT_CREATED' | 'VERIFIED'
 
 export interface PicklistItem {
@@ -20,6 +46,15 @@ export interface PartnerPreference {
   preferredMotherTongue?: string
   preferredMaritalStatus?: MaritalStatus
   preferredEducation?: string
+  preferredOccupation?: string
+  preferredLocation?: string
+  preferredHeightMinCm?: number
+  preferredHeightMaxCm?: number
+  preferredDiet?: DietType
+  preferredSmoking?: boolean
+  preferredDrinking?: boolean
+  mustHaves?: string[]
+  dealBreakers?: string[]
 }
 
 export interface MatrimonyProfileSummary {
@@ -46,20 +81,57 @@ export interface MatrimonyProfileDetail extends MatrimonyProfileSummary {
   gender: Gender
   dateOfBirth?: string
   motherTongue?: string
+  languagesKnown?: string[]
   caste?: string
+  subCaste?: string
+  gothra?: string
+  manglik?: boolean
+  horoscopeAvailable?: boolean
   country?: string
   state?: string
+  areaCode?: string
+  workLocation?: string
+  heightCm?: number
+  bodyType?: string
+  complexion?: string
   annualIncome: number
-  diet?: string
+  employmentType?: EmploymentType
+  companyName?: string
+  diet?: DietType
   smoking?: boolean
   drinking?: boolean
+  fitnessLevel?: string
+  hobbies?: string[]
+  willingToRelocate?: boolean
   bio?: string
   biodataIdentifier?: string
   biodataUrl?: string
   relationToUser?: string
+  familyType?: FamilyType
+  familyValues?: FamilyValues
+  fatherOccupation?: string
+  motherOccupation?: string
+  siblingsCount?: number
+  familyLocation?: string
+  aboutFamily?: string
+  profileVisibility?: ProfileVisibility
+  photoVisibility?: PhotoVisibility
+  contactVisibility?: ContactVisibility
+  idVerified?: boolean
   profileCompletion: number
   galleryPhotos?: Photo[]
   preference?: PartnerPreference
+}
+
+export interface ProfileConnection {
+  shortlisted: boolean
+  interestSentStatus?: InterestStatus
+  interestReceivedStatus?: InterestStatus
+}
+
+export interface ProfileDetailWithConnection {
+  profile: MatrimonyProfileDetail
+  connection: ProfileConnection
 }
 
 export interface Interest {
@@ -178,19 +250,99 @@ export interface UpsertMyProfileRequest {
   gender?: Gender
   dateOfBirth?: string
   motherTongue?: string
+  languagesKnown?: string[]
   religion?: string
   caste?: string
+  subCaste?: string
+  gothra?: string
+  manglik?: boolean
+  horoscopeAvailable?: boolean
   maritalStatus?: MaritalStatus
   education?: string
   occupation?: string
+  employmentType?: EmploymentType
+  companyName?: string
   annualIncome?: number
   city?: string
   state?: string
   country?: string
+  areaCode?: string
+  workLocation?: string
+  heightCm?: number
+  bodyType?: string
+  complexion?: string
+  diet?: DietType
+  smoking?: boolean
+  drinking?: boolean
+  fitnessLevel?: string
+  hobbies?: string[]
+  willingToRelocate?: boolean
   bio?: string
-  biodataUrl?: string
   profilePhotoIdentifier?: string
-  profilePhotoUrl?: string
   relationToUser?: string
+  familyType?: FamilyType
+  familyValues?: FamilyValues
+  fatherOccupation?: string
+  motherOccupation?: string
+  siblingsCount?: number
+  familyLocation?: string
+  aboutFamily?: string
+  profileVisibility?: ProfileVisibility
+  photoVisibility?: PhotoVisibility
+  contactVisibility?: ContactVisibility
+  idVerified?: boolean
   preference?: PartnerPreference
 }
+
+export type UpdateBasicDetailsRequest = Pick<
+  UpsertMyProfileRequest,
+  | 'fullName'
+  | 'gender'
+  | 'dateOfBirth'
+  | 'maritalStatus'
+  | 'city'
+  | 'state'
+  | 'country'
+  | 'areaCode'
+  | 'relationToUser'
+  | 'bio'
+  | 'profilePhotoIdentifier'
+>
+
+export type UpdateCommunityDetailsRequest = Pick<
+  UpsertMyProfileRequest,
+  'religion' | 'motherTongue' | 'caste' | 'subCaste' | 'languagesKnown'
+>
+
+export type UpdateProfessionalDetailsRequest = Pick<
+  UpsertMyProfileRequest,
+  | 'education'
+  | 'occupation'
+  | 'employmentType'
+  | 'companyName'
+  | 'workLocation'
+  | 'annualIncome'
+  | 'heightCm'
+  | 'bodyType'
+  | 'complexion'
+  | 'diet'
+  | 'smoking'
+  | 'drinking'
+  | 'fitnessLevel'
+  | 'hobbies'
+  | 'willingToRelocate'
+>
+
+export type UpdateHoroscopeDetailsRequest = Pick<UpsertMyProfileRequest, 'gothra' | 'manglik' | 'horoscopeAvailable'>
+
+export type UpdateFamilyDetailsRequest = Pick<
+  UpsertMyProfileRequest,
+  'familyType' | 'familyValues' | 'fatherOccupation' | 'motherOccupation' | 'siblingsCount' | 'familyLocation' | 'aboutFamily'
+>
+
+export type UpdatePartnerPreferencesRequest = Pick<UpsertMyProfileRequest, 'preference'>
+
+export type UpdatePrivacyVerificationRequest = Pick<
+  UpsertMyProfileRequest,
+  'profileVisibility' | 'photoVisibility' | 'contactVisibility' | 'idVerified'
+>

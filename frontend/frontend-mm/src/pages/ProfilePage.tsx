@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useAuth } from '@fruzoos/auth-core'
 import { useLocation } from 'react-router-dom'
 import { getAuthenticatedUser } from '../api/authClient'
@@ -16,9 +16,21 @@ import { extractApiError } from '../utils/apiError'
 import {
   getProfileDescription,
   getProfileHeading,
-  getSaveProfileButtonLabel,
 } from '../utils/profileRelationText'
-import type { Gender, MaritalStatus, PicklistItem, Photo } from '../types/matrimony'
+import type {
+  ContactVisibility,
+  DietType,
+  EmploymentType,
+  FamilyType,
+  FamilyValues,
+  Gender,
+  MaritalStatus,
+  MatrimonyProfileDetail,
+  Photo,
+  PhotoVisibility,
+  PicklistItem,
+  ProfileVisibility,
+} from '../types/matrimony'
 
 function parseCsvToPicklistItems(value: string | undefined): PicklistItem[] {
   if (!value?.trim()) return []
@@ -48,6 +60,62 @@ function getDefaultAdultDateOfBirth() {
 
 const AGE_OPTIONS = Array.from({ length: 63 }, (_, index) => String(index + 18))
 
+function calculateAge(dateOfBirth: string) {
+  if (!dateOfBirth) return null
+  const dob = new Date(dateOfBirth)
+  if (Number.isNaN(dob.getTime())) return null
+
+  const today = new Date()
+  let age = today.getFullYear() - dob.getFullYear()
+  const monthDiff = today.getMonth() - dob.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    age -= 1
+  }
+  return age
+}
+
+function parseCommaSeparatedList(value: string) {
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function toCommaSeparatedText(values?: string[]) {
+  return values?.join(', ') ?? ''
+}
+
+function normalizeOptionalText(value?: string | null) {
+  const normalized = (value ?? '').replace(/\r\n/g, '\n').trim()
+  return normalized || undefined
+}
+
+function normalizeOptionalNumber(value?: string | number | null) {
+  if (value === undefined || value === null || value === '') {
+    return undefined
+  }
+
+  const parsed = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
+function normalizeStringArray(values?: string[] | null) {
+  return (values ?? [])
+    .map((value) => value.trim())
+    .filter(Boolean)
+}
+
+function toTitleCase(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+function normalizeAreaCode(value: string) {
+  return value.replace(/\s+/g, '').toUpperCase()
+}
+
 export function ProfilePage() {
   const { auth, updateAuthUser } = useAuth()
   const location = useLocation()
@@ -59,24 +127,61 @@ export function ProfilePage() {
   const [dateOfBirth, setDateOfBirth] = useState(getDefaultAdultDateOfBirth)
   const [religion, setReligion] = useState('')
   const [motherTongue, setMotherTongue] = useState('')
+  const [languagesKnownText, setLanguagesKnownText] = useState('')
   const [maritalStatus, setMaritalStatus] = useState<'' | MaritalStatus>('')
   const [city, setCity] = useState('')
+  const [state, setState] = useState('')
+  const [country, setCountry] = useState('')
+  const [areaCode, setAreaCode] = useState('')
   const [selectedCaste, setSelectedCaste] = useState<PicklistItem | null>(null)
+  const [subCaste, setSubCaste] = useState('')
+  const [gothra, setGothra] = useState('')
+  const [manglik, setManglik] = useState<'' | 'YES' | 'NO'>('')
+  const [horoscopeAvailable, setHoroscopeAvailable] = useState<'' | 'YES' | 'NO'>('')
   const [selectedEducation, setSelectedEducation] = useState<PicklistItem | null>(null)
   const [selectedOccupation, setSelectedOccupation] = useState<PicklistItem | null>(null)
+  const [employmentType, setEmploymentType] = useState<'' | EmploymentType>('')
+  const [companyName, setCompanyName] = useState('')
+  const [workLocation, setWorkLocation] = useState('')
   const [annualIncome, setAnnualIncome] = useState('')
+  const [heightCm, setHeightCm] = useState('')
+  const [diet, setDiet] = useState<'' | DietType>('')
+  const [smoking, setSmoking] = useState<'' | 'YES' | 'NO'>('')
+  const [drinking, setDrinking] = useState<'' | 'YES' | 'NO'>('')
+  const [fitnessLevel, setFitnessLevel] = useState('')
+  const [hobbiesText, setHobbiesText] = useState('')
+  const [willingToRelocate, setWillingToRelocate] = useState<'' | 'YES' | 'NO'>('')
   const [bio, setBio] = useState('')
   const [profilePhotoIdentifier, setProfilePhotoIdentifier] = useState('')
   const [profilePhotoFallbackUrl, setProfilePhotoFallbackUrl] = useState('')
+  const [familyType, setFamilyType] = useState<'' | FamilyType>('')
+  const [familyValues, setFamilyValues] = useState<'' | FamilyValues>('')
+  const [fatherOccupation, setFatherOccupation] = useState('')
+  const [motherOccupation, setMotherOccupation] = useState('')
+  const [siblingsCount, setSiblingsCount] = useState('')
+  const [familyLocation, setFamilyLocation] = useState('')
+  const [aboutFamily, setAboutFamily] = useState('')
   const [preferredCity, setPreferredCity] = useState('')
   const [preferredReligion, setPreferredReligion] = useState<PicklistItem | null>(null)
   const [preferredCaste, setPreferredCaste] = useState<PicklistItem | null>(null)
   const [preferredEducation, setPreferredEducation] = useState<PicklistItem | null>(null)
+  const [preferredOccupation, setPreferredOccupation] = useState<PicklistItem | null>(null)
+  const [preferredLocation, setPreferredLocation] = useState('')
+  const [preferredHeightMinCm, setPreferredHeightMinCm] = useState('')
+  const [preferredHeightMaxCm, setPreferredHeightMaxCm] = useState('')
+  const [mustHavesText, setMustHavesText] = useState('')
+  const [dealBreakersText, setDealBreakersText] = useState('')
   const [preferredMinAge, setPreferredMinAge] = useState('')
   const [preferredMaxAge, setPreferredMaxAge] = useState('')
+  const [profileVisibility, setProfileVisibility] = useState<'' | ProfileVisibility>('')
+  const [photoVisibility, setPhotoVisibility] = useState<'' | PhotoVisibility>('')
+  const [contactVisibility, setContactVisibility] = useState<'' | ContactVisibility>('')
+  const [idVerified, setIdVerified] = useState<'' | 'YES' | 'NO'>('')
 
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [savingSection, setSavingSection] = useState<string | null>(null)
+  const [savedProfile, setSavedProfile] = useState<MatrimonyProfileDetail | null>(null)
   const { showToast } = useToast()
   const [isUploadingProfilePhoto, setIsUploadingProfilePhoto] = useState(false)
   const [isUploadingGalleryPhoto, setIsUploadingGalleryPhoto] = useState(false)
@@ -125,7 +230,6 @@ export function ProfilePage() {
   const biodataDisplayName = 'biodata'
   const profileHeading = getProfileHeading(profileRelation)
   const profileDescription = getProfileDescription(profileRelation)
-  const saveProfileLabel = getSaveProfileButtonLabel(profileRelation)
 
   const enabled = Boolean(auth.user)
   const isProfileNotCreated = auth.user?.verificationStatus?.trim().toUpperCase() === 'PROFILE_NOT_CREATED'
@@ -155,129 +259,248 @@ export function ProfilePage() {
     async () => {
       const response = await matrimonyApi.getMyProfile()
       const profile = response.data
-      setReferenceId(profile.referenceId ?? '')
-      setName(profile.fullName)
-      setGender(profile.gender)
-      setDateOfBirth(profile.dateOfBirth ?? '')
-      setMotherTongue(profile.motherTongue ?? '')
-      setReligion(profile.religion)
-      setMaritalStatus(profile.maritalStatus)
-      setCity(profile.city)
-      setSelectedCaste(resolvePicklistItem(casteOptions, profile.caste ?? ''))
-      setSelectedEducation(resolvePicklistItem(educationOptions, firstCsvItem(profile.education)))
-      setSelectedOccupation(resolvePicklistItem(occupationOptions, firstCsvItem(profile.occupation)))
-      setAnnualIncome(String(profile.annualIncome ?? ''))
-      setBio(profile.bio ?? '')
-      setProfilePhotoIdentifier(profile.profilePhotoIdentifier ?? '')
-      setProfilePhotoFallbackUrl(profile.profilePhotoUrl ?? '')
-      setBiodataIdentifier(profile.biodataIdentifier ?? '')
-      setProfileRelation(profile.relationToUser ?? null)
-      setPreferredCity(profile.preference?.preferredCity ?? '')
-      setPreferredReligion(resolvePicklistItem(religionOptions, profile.preference?.preferredReligion ?? ''))
-      setPreferredCaste(resolvePicklistItem(casteOptions, profile.preference?.preferredCaste ?? ''))
-      setPreferredEducation(resolvePicklistItem(educationOptions, profile.preference?.preferredEducation ?? ''))
-      setPreferredMinAge(profile.preference?.minAge ? String(profile.preference.minAge) : '')
-      setPreferredMaxAge(profile.preference?.maxAge ? String(profile.preference.maxAge) : '')
+      hydrateProfile(profile)
       return profile
     },
     [auth.user?.id],
     shouldLoadExistingProfile,
   )
 
-  const onSubmit = async (event: FormEvent) => {
-    event.preventDefault()
+  const hydrateProfile = (profile: MatrimonyProfileDetail) => {
+    setSavedProfile(profile)
+    setReferenceId(profile.referenceId ?? '')
+    setName(profile.fullName)
+    setGender(profile.gender)
+    setDateOfBirth(profile.dateOfBirth ?? '')
+    setMotherTongue(profile.motherTongue ?? '')
+    setLanguagesKnownText(toCommaSeparatedText(profile.languagesKnown))
+    setReligion(profile.religion)
+    setMaritalStatus(profile.maritalStatus)
+    setCity(profile.city)
+    setState(profile.state ?? '')
+    setCountry(profile.country ?? '')
+    setAreaCode(profile.areaCode ?? '')
+    setSelectedCaste(resolvePicklistItem(casteOptions, profile.caste ?? ''))
+    setSubCaste(profile.subCaste ?? '')
+    setGothra(profile.gothra ?? '')
+    setManglik(profile.manglik === undefined ? '' : profile.manglik ? 'YES' : 'NO')
+    setHoroscopeAvailable(profile.horoscopeAvailable === undefined ? '' : profile.horoscopeAvailable ? 'YES' : 'NO')
+    setSelectedEducation(resolvePicklistItem(educationOptions, firstCsvItem(profile.education)))
+    setSelectedOccupation(resolvePicklistItem(occupationOptions, firstCsvItem(profile.occupation)))
+    setEmploymentType(profile.employmentType ?? '')
+    setCompanyName(profile.companyName ?? '')
+    setWorkLocation(profile.workLocation ?? '')
+    setAnnualIncome(String(profile.annualIncome ?? ''))
+    setHeightCm(profile.heightCm ? String(profile.heightCm) : '')
+    setDiet(profile.diet ?? '')
+    setSmoking(profile.smoking === undefined ? '' : profile.smoking ? 'YES' : 'NO')
+    setDrinking(profile.drinking === undefined ? '' : profile.drinking ? 'YES' : 'NO')
+    setFitnessLevel(profile.fitnessLevel ?? '')
+    setHobbiesText(toCommaSeparatedText(profile.hobbies))
+    setWillingToRelocate(profile.willingToRelocate === undefined ? '' : profile.willingToRelocate ? 'YES' : 'NO')
+    setBio(profile.bio ?? '')
+    setProfilePhotoIdentifier(profile.profilePhotoIdentifier ?? '')
+    setProfilePhotoFallbackUrl(profile.profilePhotoUrl ?? '')
+    setBiodataIdentifier(profile.biodataIdentifier ?? '')
+    setProfileRelation(profile.relationToUser ?? null)
+    setFamilyType(profile.familyType ?? '')
+    setFamilyValues(profile.familyValues ?? '')
+    setFatherOccupation(profile.fatherOccupation ?? '')
+    setMotherOccupation(profile.motherOccupation ?? '')
+    setSiblingsCount(profile.siblingsCount === undefined ? '' : String(profile.siblingsCount))
+    setFamilyLocation(profile.familyLocation ?? '')
+    setAboutFamily(profile.aboutFamily ?? '')
+    setPreferredCity(profile.preference?.preferredCity ?? '')
+    setPreferredReligion(resolvePicklistItem(religionOptions, profile.preference?.preferredReligion ?? ''))
+    setPreferredCaste(resolvePicklistItem(casteOptions, profile.preference?.preferredCaste ?? ''))
+    setPreferredEducation(resolvePicklistItem(educationOptions, profile.preference?.preferredEducation ?? ''))
+    setPreferredOccupation(resolvePicklistItem(occupationOptions, profile.preference?.preferredOccupation ?? ''))
+    setPreferredLocation(profile.preference?.preferredLocation ?? '')
+    setPreferredHeightMinCm(profile.preference?.preferredHeightMinCm ? String(profile.preference.preferredHeightMinCm) : '')
+    setPreferredHeightMaxCm(profile.preference?.preferredHeightMaxCm ? String(profile.preference.preferredHeightMaxCm) : '')
+    setMustHavesText(toCommaSeparatedText(profile.preference?.mustHaves))
+    setDealBreakersText(toCommaSeparatedText(profile.preference?.dealBreakers))
+    setPreferredMinAge(profile.preference?.minAge ? String(profile.preference.minAge) : '')
+    setPreferredMaxAge(profile.preference?.maxAge ? String(profile.preference.maxAge) : '')
+    setProfileVisibility(profile.profileVisibility ?? '')
+    setPhotoVisibility(profile.photoVisibility ?? '')
+    setContactVisibility(profile.contactVisibility ?? '')
+    setIdVerified(profile.idVerified === undefined ? '' : profile.idVerified ? 'YES' : 'NO')
+  }
 
-    if (name.trim().length < 2) {
-      setError('Full name must be at least 2 characters long.')
-      showToast('Full name must be at least 2 characters long.', 'error')
-      setMessage('')
-      return
-    }
+  const buildBasicPayload = () => ({
+    fullName: name.trim(),
+    gender: gender || undefined,
+    dateOfBirth: dateOfBirth || undefined,
+    maritalStatus: maritalStatus || undefined,
+    city: toTitleCase(city) || undefined,
+    state: state.trim() || undefined,
+    country: country.trim() || undefined,
+    areaCode: normalizeAreaCode(areaCode) || undefined,
+    relationToUser: profileRelation || undefined,
+    bio: bio.trim() || undefined,
+    profilePhotoIdentifier: profilePhotoIdentifier || undefined,
+  })
 
-    if (!dateOfBirth || !gender || !maritalStatus || !religion.trim() || !city.trim()) {
-      setError('Date of birth, gender, marital status, religion, and city are required.')
-      showToast('Date of birth, gender, marital status, religion, and city are required.', 'error')
-      setMessage('')
-      return
-    }
+  const buildCommunityPayload = () => ({
+    religion: normalizeOptionalText(religion),
+    motherTongue: normalizeOptionalText(motherTongue),
+    caste: normalizeOptionalText(selectedCaste?.name),
+    subCaste: normalizeOptionalText(subCaste),
+    languagesKnown: normalizeStringArray(parseCommaSeparatedList(languagesKnownText)),
+  })
 
-    setError('')
+  const buildProfessionalPayload = () => ({
+    education: normalizeOptionalText(selectedEducation?.name),
+    occupation: normalizeOptionalText(selectedOccupation?.name),
+    employmentType: employmentType || undefined,
+    companyName: normalizeOptionalText(companyName),
+    workLocation: normalizeOptionalText(workLocation),
+    annualIncome: annualIncome ? Number(annualIncome) : undefined,
+    heightCm: heightCm ? Number(heightCm) : undefined,
+    diet: diet || undefined,
+    smoking: smoking === '' ? undefined : smoking === 'YES',
+    drinking: drinking === '' ? undefined : drinking === 'YES',
+    fitnessLevel: normalizeOptionalText(fitnessLevel),
+    hobbies: normalizeStringArray(parseCommaSeparatedList(hobbiesText)),
+    willingToRelocate: willingToRelocate === '' ? undefined : willingToRelocate === 'YES',
+  })
 
-    try {
-      const response = await matrimonyApi.upsertMyProfile({
-        fullName: name.trim(),
-        gender,
-        dateOfBirth: dateOfBirth || undefined,
-        motherTongue: motherTongue || undefined,
-        religion: religion.trim(),
-        caste: selectedCaste?.name || undefined,
-        maritalStatus,
-        city: city.trim(),
-        education: selectedEducation?.name || undefined,
-        occupation: selectedOccupation?.name || undefined,
-        annualIncome: annualIncome ? Number(annualIncome) : undefined,
-        bio: bio.trim() || undefined,
-        relationToUser: profileRelation || undefined,
+  const buildHoroscopePayload = () => ({
+    gothra: gothra.trim() || undefined,
+    manglik: manglik === '' ? undefined : manglik === 'YES',
+    horoscopeAvailable: horoscopeAvailable === '' ? undefined : horoscopeAvailable === 'YES',
+  })
+
+  const buildFamilyPayload = () => ({
+    familyType: familyType || undefined,
+    familyValues: familyValues || undefined,
+    fatherOccupation: normalizeOptionalText(fatherOccupation),
+    motherOccupation: normalizeOptionalText(motherOccupation),
+    siblingsCount: normalizeOptionalNumber(siblingsCount),
+    familyLocation: normalizeOptionalText(familyLocation),
+    aboutFamily: normalizeOptionalText(aboutFamily),
+  })
+
+  const buildPartnerPreferencesPayload = () => ({
+    preference: {
+      preferredCity: normalizeOptionalText(preferredCity),
+      preferredReligion: normalizeOptionalText(preferredReligion?.name),
+      preferredCaste: normalizeOptionalText(preferredCaste?.name),
+      preferredEducation: normalizeOptionalText(preferredEducation?.name),
+      preferredOccupation: normalizeOptionalText(preferredOccupation?.name),
+      preferredLocation: normalizeOptionalText(preferredLocation),
+      preferredHeightMinCm: normalizeOptionalNumber(preferredHeightMinCm),
+      preferredHeightMaxCm: normalizeOptionalNumber(preferredHeightMaxCm),
+      mustHaves: normalizeStringArray(parseCommaSeparatedList(mustHavesText)),
+      dealBreakers: normalizeStringArray(parseCommaSeparatedList(dealBreakersText)),
+      minAge: normalizeOptionalNumber(preferredMinAge),
+      maxAge: normalizeOptionalNumber(preferredMaxAge),
+    },
+  })
+
+  const buildPrivacyPayload = () => ({
+    profileVisibility: profileVisibility || undefined,
+    photoVisibility: photoVisibility || undefined,
+    contactVisibility: contactVisibility || undefined,
+    idVerified: idVerified === '' ? undefined : idVerified === 'YES',
+  })
+
+  const isEqualPayload = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.stringify(right)
+
+  const isBasicDirty = savedProfile
+    ? !isEqualPayload(buildBasicPayload(), {
+        fullName: savedProfile.fullName?.trim() || undefined,
+        gender: savedProfile.gender || undefined,
+        dateOfBirth: savedProfile.dateOfBirth || undefined,
+        maritalStatus: savedProfile.maritalStatus || undefined,
+        city: toTitleCase(savedProfile.city || '') || undefined,
+        state: savedProfile.state?.trim() || undefined,
+        country: savedProfile.country?.trim() || undefined,
+        areaCode: normalizeAreaCode(savedProfile.areaCode || '') || undefined,
+        relationToUser: savedProfile.relationToUser || undefined,
+        bio: savedProfile.bio?.trim() || undefined,
+        profilePhotoIdentifier: savedProfile.profilePhotoIdentifier || undefined,
+      })
+    : false
+
+  const isCommunityDirty = savedProfile
+    ? !isEqualPayload(buildCommunityPayload(), {
+        religion: normalizeOptionalText(savedProfile.religion),
+        motherTongue: normalizeOptionalText(savedProfile.motherTongue),
+        caste: normalizeOptionalText(savedProfile.caste),
+        subCaste: normalizeOptionalText(savedProfile.subCaste),
+        languagesKnown: normalizeStringArray(savedProfile.languagesKnown),
+      })
+    : false
+
+  const isProfessionalDirty = savedProfile
+    ? !isEqualPayload(buildProfessionalPayload(), {
+        education: normalizeOptionalText(firstCsvItem(savedProfile.education)),
+        occupation: normalizeOptionalText(firstCsvItem(savedProfile.occupation)),
+        employmentType: savedProfile.employmentType || undefined,
+        companyName: normalizeOptionalText(savedProfile.companyName),
+        workLocation: normalizeOptionalText(savedProfile.workLocation),
+        annualIncome: savedProfile.annualIncome ?? undefined,
+        heightCm: savedProfile.heightCm ?? undefined,
+        diet: savedProfile.diet || undefined,
+        smoking: savedProfile.smoking,
+        drinking: savedProfile.drinking,
+        fitnessLevel: normalizeOptionalText(savedProfile.fitnessLevel),
+        hobbies: normalizeStringArray(savedProfile.hobbies),
+        willingToRelocate: savedProfile.willingToRelocate,
+      })
+    : false
+
+  const isHoroscopeDirty = savedProfile
+    ? !isEqualPayload(buildHoroscopePayload(), {
+        gothra: savedProfile.gothra?.trim() || undefined,
+        manglik: savedProfile.manglik,
+        horoscopeAvailable: savedProfile.horoscopeAvailable,
+      })
+    : false
+
+  const isFamilyDirty = savedProfile
+    ? !isEqualPayload(buildFamilyPayload(), {
+        familyType: savedProfile.familyType || undefined,
+        familyValues: savedProfile.familyValues || undefined,
+        fatherOccupation: normalizeOptionalText(savedProfile.fatherOccupation),
+        motherOccupation: normalizeOptionalText(savedProfile.motherOccupation),
+        siblingsCount: normalizeOptionalNumber(savedProfile.siblingsCount),
+        familyLocation: normalizeOptionalText(savedProfile.familyLocation),
+        aboutFamily: normalizeOptionalText(savedProfile.aboutFamily),
+      })
+    : false
+
+  const isPreferencesDirty = savedProfile
+    ? !isEqualPayload(buildPartnerPreferencesPayload(), {
         preference: {
-          preferredCity: preferredCity.trim() || undefined,
-          preferredReligion: preferredReligion?.name || undefined,
-          preferredCaste: preferredCaste?.name || undefined,
-          preferredEducation: preferredEducation?.name || undefined,
-          minAge: preferredMinAge ? Number(preferredMinAge) : undefined,
-          maxAge: preferredMaxAge ? Number(preferredMaxAge) : undefined,
+          preferredCity: normalizeOptionalText(savedProfile.preference?.preferredCity),
+          preferredReligion: normalizeOptionalText(savedProfile.preference?.preferredReligion),
+          preferredCaste: normalizeOptionalText(savedProfile.preference?.preferredCaste),
+          preferredEducation: normalizeOptionalText(savedProfile.preference?.preferredEducation),
+          preferredOccupation: normalizeOptionalText(savedProfile.preference?.preferredOccupation),
+          preferredLocation: normalizeOptionalText(savedProfile.preference?.preferredLocation),
+          preferredHeightMinCm: normalizeOptionalNumber(savedProfile.preference?.preferredHeightMinCm),
+          preferredHeightMaxCm: normalizeOptionalNumber(savedProfile.preference?.preferredHeightMaxCm),
+          mustHaves: normalizeStringArray(savedProfile.preference?.mustHaves),
+          dealBreakers: normalizeStringArray(savedProfile.preference?.dealBreakers),
+          minAge: normalizeOptionalNumber(savedProfile.preference?.minAge),
+          maxAge: normalizeOptionalNumber(savedProfile.preference?.maxAge),
         },
       })
+    : false
 
-      const profile = response.data
-      setReferenceId(profile.referenceId ?? '')
-      setName(profile.fullName)
-      setGender(profile.gender)
-      setDateOfBirth(profile.dateOfBirth ?? '')
-      setMotherTongue(profile.motherTongue ?? '')
-      setReligion(profile.religion)
-      setMaritalStatus(profile.maritalStatus)
-      setCity(profile.city)
-      setSelectedCaste(resolvePicklistItem(casteOptions, profile.caste ?? ''))
-      setSelectedEducation(resolvePicklistItem(educationOptions, firstCsvItem(profile.education)))
-      setSelectedOccupation(resolvePicklistItem(occupationOptions, firstCsvItem(profile.occupation)))
-      setAnnualIncome(String(profile.annualIncome ?? ''))
-      setBio(profile.bio ?? '')
-      setProfilePhotoIdentifier(profile.profilePhotoIdentifier ?? '')
-      setProfilePhotoFallbackUrl(profile.profilePhotoUrl ?? '')
-      setBiodataIdentifier(profile.biodataIdentifier ?? '')
-      setProfileRelation(profile.relationToUser ?? null)
-      setPreferredCity(profile.preference?.preferredCity ?? '')
-      setPreferredReligion(resolvePicklistItem(religionOptions, profile.preference?.preferredReligion ?? ''))
-      setPreferredCaste(resolvePicklistItem(casteOptions, profile.preference?.preferredCaste ?? ''))
-      setPreferredEducation(resolvePicklistItem(educationOptions, profile.preference?.preferredEducation ?? ''))
-      setPreferredMinAge(profile.preference?.minAge ? String(profile.preference.minAge) : '')
-      setPreferredMaxAge(profile.preference?.maxAge ? String(profile.preference.maxAge) : '')
-
-      updateAuthUser({
-        id: auth.user?.id ?? '',
-        name: profile.fullName,
-        email: auth.user?.email ?? '',
-        role: auth.user?.role ?? 'USER',
-        phone: auth.user?.phone ?? null,
-        verificationStatus: auth.user?.verificationStatus ?? null,
+  const isPrivacyDirty = savedProfile
+    ? !isEqualPayload(buildPrivacyPayload(), {
+        profileVisibility: savedProfile.profileVisibility || undefined,
+        photoVisibility: savedProfile.photoVisibility || undefined,
+        contactVisibility: savedProfile.contactVisibility || undefined,
+        idVerified: savedProfile.idVerified,
       })
-      // After first profile creation, refresh verificationStatus from /api/auth/me
-      if (isProfileNotCreated) {
-        try {
-          const fresh = await getAuthenticatedUser()
-          updateAuthUser(fresh)
-        } catch {
-          // non-critical
-        }
-      }
-      setMessage(response.message || 'Profile updated successfully.')
-      showToast(response.message || 'Profile updated successfully.', 'success')
-    } catch (err) {
-      setError('Unable to update profile. Please try again.')
-      showToast(extractApiError(err, 'Unable to update profile. Please try again.'), 'error')
-      setMessage('')
-    }
-  }
+    : false
+
+  const shouldEnableSectionSave = (isDirty: boolean) => isProfileNotCreated || isDirty
 
   const onUploadProfilePhoto = async (file: File) => {
     setIsUploadingProfilePhoto(true)
@@ -339,7 +562,7 @@ export function ProfilePage() {
     }
 
     try {
-      const response = await matrimonyApi.upsertMyProfile({ profilePhotoIdentifier: '' })
+      const response = await matrimonyApi.updateMyProfileBasicDetails({ profilePhotoIdentifier: '' })
       setProfilePhotoIdentifier(response.data.profilePhotoIdentifier ?? '')
       setProfilePhotoFallbackUrl(response.data.profilePhotoUrl ?? '')
       showToast(response.message || 'Profile photo deleted successfully.', 'success')
@@ -404,6 +627,147 @@ export function ProfilePage() {
     }
   }
 
+  const saveSection = async (
+    sectionKey: string,
+    action: () => Promise<{ message: string; data: MatrimonyProfileDetail }>,
+    fallbackErrorMessage: string,
+  ) => {
+    setError('')
+    setMessage('')
+    setSavingSection(sectionKey)
+
+    try {
+      const response = await action()
+      hydrateProfile(response.data)
+      updateAuthUser({
+        id: auth.user?.id ?? '',
+        name: response.data.fullName,
+        email: auth.user?.email ?? '',
+        role: auth.user?.role ?? 'USER',
+        phone: auth.user?.phone ?? null,
+        verificationStatus: auth.user?.verificationStatus ?? null,
+      })
+
+      if (isProfileNotCreated) {
+        try {
+          const fresh = await getAuthenticatedUser()
+          updateAuthUser(fresh)
+        } catch {
+          // non-critical
+        }
+      }
+
+      const successMessage = response.message || 'Section updated successfully.'
+      setMessage(successMessage)
+      showToast(successMessage, 'success')
+    } catch (err) {
+      setError(fallbackErrorMessage)
+      setMessage('')
+      showToast(extractApiError(err, fallbackErrorMessage), 'error')
+    } finally {
+      setSavingSection(null)
+    }
+  }
+
+  const onSaveBasicDetails = async () => {
+    if (name.trim().length < 2) {
+      setError('Full name must be at least 2 characters long.')
+      showToast('Full name must be at least 2 characters long.', 'error')
+      setMessage('')
+      return
+    }
+
+    const calculatedAge = calculateAge(dateOfBirth)
+    if (calculatedAge === null || calculatedAge < 18 || calculatedAge > 80) {
+      setError('You must be between 18 and 80 years old to create a profile.')
+      showToast('You must be between 18 and 80 years old to create a profile.', 'error')
+      setMessage('')
+      return
+    }
+
+    if (!gender || !maritalStatus || !profileRelation || !city.trim() || !country.trim()) {
+      setError('Gender, marital status, relation to user, city, and country are required.')
+      showToast('Gender, marital status, relation to user, city, and country are required.', 'error')
+      setMessage('')
+      return
+    }
+
+    if (bio.trim().length > 0 && bio.trim().length < 50) {
+      setError('Bio must be at least 50 characters if provided.')
+      showToast('Bio must be at least 50 characters if provided.', 'error')
+      setMessage('')
+      return
+    }
+
+    await saveSection(
+      'basic',
+      () => matrimonyApi.updateMyProfileBasicDetails(buildBasicPayload()),
+      'Unable to update basic details. Please try again.',
+    )
+  }
+
+  const onSaveCommunityDetails = async () => {
+    if (!religion.trim()) {
+      setError('Religion is required.')
+      showToast('Religion is required.', 'error')
+      setMessage('')
+      return
+    }
+
+    await saveSection(
+      'community',
+      () => matrimonyApi.updateMyProfileCommunityDetails(buildCommunityPayload()),
+      'Unable to update community details. Please try again.',
+    )
+  }
+
+  const onSaveProfessionalDetails = async () => {
+    await saveSection(
+      'professional',
+      () => matrimonyApi.updateMyProfileProfessionalDetails(buildProfessionalPayload()),
+      'Unable to update professional details. Please try again.',
+    )
+  }
+
+  const onSaveHoroscopeDetails = async () => {
+    await saveSection(
+      'horoscope',
+      () => matrimonyApi.updateMyProfileHoroscopeDetails(buildHoroscopePayload()),
+      'Unable to update horoscope details. Please try again.',
+    )
+  }
+
+  const onSaveFamilyDetails = async () => {
+    await saveSection(
+      'family',
+      () => matrimonyApi.updateMyProfileFamilyDetails(buildFamilyPayload()),
+      'Unable to update family details. Please try again.',
+    )
+  }
+
+  const onSavePartnerPreferences = async () => {
+    if (preferredMinAge && preferredMaxAge && Number(preferredMinAge) > Number(preferredMaxAge)) {
+      setError('Preferred minimum age cannot be greater than preferred maximum age.')
+      showToast('Preferred minimum age cannot be greater than preferred maximum age.', 'error')
+      setMessage('')
+      return
+    }
+
+    await saveSection(
+      'preferences',
+      () => matrimonyApi.updateMyProfilePartnerPreferences(buildPartnerPreferencesPayload()),
+      'Unable to update partner preferences. Please try again.',
+    )
+  }
+
+  const onSavePrivacySettings = async () => {
+    await saveSection(
+      'privacy',
+      () => matrimonyApi.updateMyProfilePrivacySettings(buildPrivacyPayload()),
+      'Unable to update privacy settings. Please try again.',
+    )
+  }
+
   return (
     <section className="stack-wide">
       <div className="profile-heading-row">
@@ -412,7 +776,7 @@ export function ProfilePage() {
       </div>
       <p>{profileDescription}</p>
       <AsyncState loading={loading} error={loadError}>
-        <form className="stack-wide" onSubmit={onSubmit}>
+        <form className="stack-wide" onSubmit={(event) => event.preventDefault()}>
           <h3>Photos</h3>
           <div className="stack-wide">
             <div className="stack">
@@ -557,7 +921,10 @@ export function ProfilePage() {
             )}
           </div>
 
-          <h3>Basic Details</h3>
+          <h3>
+            Basic Details
+            {isBasicDirty && <span className="section-status-indicator">Unsaved</span>}
+          </h3>
           <div className="toolbar-grid">
             <label>
               <span className="field-label">Full Name <span className="required-mark">*</span></span>
@@ -581,6 +948,69 @@ export function ProfilePage() {
                 required
               />
             </label>
+            <label>
+              <span className="field-label">Relation To User <span className="required-mark">*</span></span>
+              <select
+                value={profileRelation ?? ''}
+                onChange={(event) => setProfileRelation(event.target.value || null)}
+                required
+              >
+                <option value="">Select relation</option>
+                <option value="SELF">Self</option>
+                <option value="SON">Son</option>
+                <option value="DAUGHTER">Daughter</option>
+                <option value="BROTHER">Brother</option>
+                <option value="SISTER">Sister</option>
+                <option value="RELATIVE">Relative</option>
+                <option value="FRIEND">Friend</option>
+              </select>
+            </label>
+            <label>
+              <span className="field-label">Marital Status <span className="required-mark">*</span></span>
+              <select
+                value={maritalStatus}
+                onChange={(event) => setMaritalStatus(event.target.value as '' | MaritalStatus)}
+                required
+              >
+                <option value="">Select marital status</option>
+                <option value="NEVER_MARRIED">Never Married</option>
+                <option value="DIVORCED">Divorced</option>
+                <option value="WIDOWED">Widowed</option>
+                <option value="AWAITING_DIVORCE">Awaiting Divorce</option>
+              </select>
+            </label>
+            <label>
+              <span className="field-label">City <span className="required-mark">*</span></span>
+              <input value={city} onChange={(event) => setCity(event.target.value)} required />
+            </label>
+            <label>
+              Area Code (PIN/ZIP)
+              <input value={areaCode} onChange={(event) => setAreaCode(event.target.value)} />
+            </label>
+            <label>
+              State
+              <input value={state} onChange={(event) => setState(event.target.value)} />
+            </label>
+            <label>
+              <span className="field-label">Country <span className="required-mark">*</span></span>
+              <input value={country} onChange={(event) => setCountry(event.target.value)} required />
+            </label>
+          </div>
+          <label>
+            Bio
+            <textarea value={bio} onChange={(event) => setBio(event.target.value)} rows={4} maxLength={2000} />
+          </label>
+          <div className="inline-actions">
+            <button type="button" disabled={Boolean(savingSection) || !shouldEnableSectionSave(isBasicDirty)} onClick={() => void onSaveBasicDetails()}>
+              {savingSection === 'basic' ? 'Saving Basic Details...' : 'Save Basic Details'}
+            </button>
+          </div>
+
+          <h3>
+            Community Details
+            {isCommunityDirty && <span className="section-status-indicator">Unsaved</span>}
+          </h3>
+          <div className="toolbar-grid professional-details-grid">
             <label>
               <span className="field-label">Religion <span className="required-mark">*</span></span>
               <select value={religion} onChange={(event) => setReligion(event.target.value)} required>
@@ -611,23 +1041,25 @@ export function ProfilePage() {
               onChange={setSelectedCaste}
             />
             <label>
-              <span className="field-label">Marital Status <span className="required-mark">*</span></span>
-              <select
-                value={maritalStatus}
-                onChange={(event) => setMaritalStatus(event.target.value as '' | MaritalStatus)}
-                required
-              >
-                <option value="">Select marital status</option>
-                <option value="NEVER_MARRIED">Never Married</option>
-                <option value="DIVORCED">Divorced</option>
-                <option value="WIDOWED">Widowed</option>
-                <option value="AWAITING_DIVORCE">Awaiting Divorce</option>
-              </select>
+              Sub Caste
+              <input value={subCaste} onChange={(event) => setSubCaste(event.target.value)} />
             </label>
             <label>
-              <span className="field-label">City <span className="required-mark">*</span></span>
-              <input value={city} onChange={(event) => setCity(event.target.value)} required />
+              Languages Known (comma separated)
+              <input value={languagesKnownText} onChange={(event) => setLanguagesKnownText(event.target.value)} />
             </label>
+          </div>
+          <div className="inline-actions">
+            <button type="button" disabled={Boolean(savingSection) || !shouldEnableSectionSave(isCommunityDirty)} onClick={() => void onSaveCommunityDetails()}>
+              {savingSection === 'community' ? 'Saving Community Details...' : 'Save Community Details'}
+            </button>
+          </div>
+
+          <h3>
+            Professional Details
+            {isProfessionalDirty && <span className="section-status-indicator">Unsaved</span>}
+          </h3>
+          <div className="toolbar-grid">
             <PicklistSingleSelect
               label="Education"
               placeholder="Type to search education"
@@ -651,14 +1083,185 @@ export function ProfilePage() {
                 onChange={(event) => setAnnualIncome(event.target.value)}
               />
             </label>
+            <label>
+              Employment Type
+              <select
+                value={employmentType}
+                onChange={(event) => setEmploymentType(event.target.value as '' | EmploymentType)}
+              >
+                <option value="">Select employment type</option>
+                <option value="PRIVATE">Private</option>
+                <option value="GOVERNMENT">Government</option>
+                <option value="BUSINESS">Business</option>
+                <option value="SELF_EMPLOYED">Self Employed</option>
+                <option value="NOT_WORKING">Not Working</option>
+                <option value="STUDENT">Student</option>
+              </select>
+            </label>
+            <label>
+              Company Name
+              <input value={companyName} onChange={(event) => setCompanyName(event.target.value)} />
+            </label>
+            <label>
+              Work Location
+              <input value={workLocation} onChange={(event) => setWorkLocation(event.target.value)} />
+            </label>
+            <label>
+              Height (cm)
+              <input type="number" min={120} max={230} value={heightCm} onChange={(event) => setHeightCm(event.target.value)} />
+            </label>
+            <label>
+              Diet
+              <select value={diet} onChange={(event) => setDiet(event.target.value as '' | DietType)}>
+                <option value="">Not specified</option>
+                <option value="VEGETARIAN">Vegetarian</option>
+                <option value="EGGETARIAN">Eggetarian</option>
+                <option value="NON_VEGETARIAN">Non Vegetarian</option>
+                <option value="VEGAN">Vegan</option>
+                <option value="JAIN">Jain</option>
+                <option value="OCCASIONALLY_NON_VEG">Occasionally Non Veg</option>
+              </select>
+            </label>
+            <label>
+              Smoking
+              <select value={smoking} onChange={(event) => setSmoking(event.target.value as '' | 'YES' | 'NO')}>
+                <option value="">Not specified</option>
+                <option value="YES">Yes</option>
+                <option value="NO">No</option>
+              </select>
+            </label>
+            <label>
+              Drinking
+              <select value={drinking} onChange={(event) => setDrinking(event.target.value as '' | 'YES' | 'NO')}>
+                <option value="">Not specified</option>
+                <option value="YES">Yes</option>
+                <option value="NO">No</option>
+              </select>
+            </label>
+            <label>
+              Fitness Level
+              <input value={fitnessLevel} onChange={(event) => setFitnessLevel(event.target.value)} />
+            </label>
+            <label>
+              Willing To Relocate
+              <select
+                value={willingToRelocate}
+                onChange={(event) => setWillingToRelocate(event.target.value as '' | 'YES' | 'NO')}
+              >
+                <option value="">Not specified</option>
+                <option value="YES">Yes</option>
+                <option value="NO">No</option>
+              </select>
+            </label>
+            <label className="toolbar-grid-full-span">
+              Hobbies (comma separated)
+              <input value={hobbiesText} onChange={(event) => setHobbiesText(event.target.value)} />
+            </label>
+          </div>
+          <div className="inline-actions">
+            <button type="button" disabled={Boolean(savingSection) || !shouldEnableSectionSave(isProfessionalDirty)} onClick={() => void onSaveProfessionalDetails()}>
+              {savingSection === 'professional' ? 'Saving Professional Details...' : 'Save Professional Details'}
+            </button>
+          </div>
+
+          <h3>
+            Horoscope Details
+            {isHoroscopeDirty && <span className="section-status-indicator">Unsaved</span>}
+          </h3>
+          <div className="toolbar-grid">
+            <label>
+              Gothra
+              <input value={gothra} onChange={(event) => setGothra(event.target.value)} />
+            </label>
+            <label>
+              Manglik
+              <select value={manglik} onChange={(event) => setManglik(event.target.value as '' | 'YES' | 'NO')}>
+                <option value="">Not specified</option>
+                <option value="YES">Yes</option>
+                <option value="NO">No</option>
+              </select>
+            </label>
+            <label>
+              Horoscope Available
+              <select
+                value={horoscopeAvailable}
+                onChange={(event) => setHoroscopeAvailable(event.target.value as '' | 'YES' | 'NO')}
+              >
+                <option value="">Not specified</option>
+                <option value="YES">Yes</option>
+                <option value="NO">No</option>
+              </select>
+            </label>
+          </div>
+          <div className="inline-actions">
+            <button type="button" disabled={Boolean(savingSection) || !shouldEnableSectionSave(isHoroscopeDirty)} onClick={() => void onSaveHoroscopeDetails()}>
+              {savingSection === 'horoscope' ? 'Saving Horoscope Details...' : 'Save Horoscope Details'}
+            </button>
+          </div>
+
+          <h3>
+            Family Details
+            {isFamilyDirty && <span className="section-status-indicator">Unsaved</span>}
+          </h3>
+          <div className="toolbar-grid">
+            <label>
+              Family Type
+              <select value={familyType} onChange={(event) => setFamilyType(event.target.value as '' | FamilyType)}>
+                <option value="">Not specified</option>
+                <option value="NUCLEAR">Nuclear</option>
+                <option value="JOINT">Joint</option>
+                <option value="EXTENDED">Extended</option>
+              </select>
+            </label>
+            <label>
+              Family Values
+              <select
+                value={familyValues}
+                onChange={(event) => setFamilyValues(event.target.value as '' | FamilyValues)}
+              >
+                <option value="">Not specified</option>
+                <option value="TRADITIONAL">Traditional</option>
+                <option value="MODERATE">Moderate</option>
+                <option value="LIBERAL">Liberal</option>
+              </select>
+            </label>
+            <label>
+              Father's Occupation
+              <input value={fatherOccupation} onChange={(event) => setFatherOccupation(event.target.value)} />
+            </label>
+            <label>
+              Mother's Occupation
+              <input value={motherOccupation} onChange={(event) => setMotherOccupation(event.target.value)} />
+            </label>
+            <label>
+              Siblings Count
+              <input type="number" min={0} max={20} value={siblingsCount} onChange={(event) => setSiblingsCount(event.target.value)} />
+            </label>
+            <label>
+              Family Location
+              <input value={familyLocation} onChange={(event) => setFamilyLocation(event.target.value)} />
+            </label>
           </div>
 
           <label>
-            Bio
-            <textarea value={bio} onChange={(event) => setBio(event.target.value)} rows={4} maxLength={2000} />
+            About Family
+            <textarea
+              value={aboutFamily}
+              onChange={(event) => setAboutFamily(event.target.value)}
+              rows={3}
+              maxLength={1000}
+            />
           </label>
+          <div className="inline-actions">
+            <button type="button" disabled={Boolean(savingSection) || !shouldEnableSectionSave(isFamilyDirty)} onClick={() => void onSaveFamilyDetails()}>
+              {savingSection === 'family' ? 'Saving Family Details...' : 'Save Family Details'}
+            </button>
+          </div>
 
-          <h3>Partner Preferences</h3>
+          <h3>
+            Partner Preferences
+            {isPreferencesDirty && <span className="section-status-indicator">Unsaved</span>}
+          </h3>
           <div className="toolbar-grid">
             <label>
               Preferred City
@@ -685,6 +1288,37 @@ export function ProfilePage() {
               selectedItem={preferredEducation}
               onChange={setPreferredEducation}
             />
+            <PicklistSingleSelect
+              label="Preferred Occupation"
+              placeholder="Type to search occupation"
+              options={occupationOptions}
+              selectedItem={preferredOccupation}
+              onChange={setPreferredOccupation}
+            />
+            <label>
+              Preferred Location
+              <input value={preferredLocation} onChange={(event) => setPreferredLocation(event.target.value)} />
+            </label>
+            <label>
+              Preferred Min Height (cm)
+              <input
+                type="number"
+                min={120}
+                max={230}
+                value={preferredHeightMinCm}
+                onChange={(event) => setPreferredHeightMinCm(event.target.value)}
+              />
+            </label>
+            <label>
+              Preferred Max Height (cm)
+              <input
+                type="number"
+                min={120}
+                max={230}
+                value={preferredHeightMaxCm}
+                onChange={(event) => setPreferredHeightMaxCm(event.target.value)}
+              />
+            </label>
             <label>
               Preferred Min Age
               <select value={preferredMinAge} onChange={(event) => setPreferredMinAge(event.target.value)}>
@@ -707,6 +1341,75 @@ export function ProfilePage() {
                 ))}
               </select>
             </label>
+            <label>
+              Must Haves (comma separated)
+              <input value={mustHavesText} onChange={(event) => setMustHavesText(event.target.value)} />
+            </label>
+            <label>
+              Deal Breakers (comma separated)
+              <input value={dealBreakersText} onChange={(event) => setDealBreakersText(event.target.value)} />
+            </label>
+          </div>
+          <div className="inline-actions">
+            <button type="button" disabled={Boolean(savingSection) || !shouldEnableSectionSave(isPreferencesDirty)} onClick={() => void onSavePartnerPreferences()}>
+              {savingSection === 'preferences' ? 'Saving Partner Preferences...' : 'Save Partner Preferences'}
+            </button>
+          </div>
+
+          <h3>
+            Privacy and Verification
+            {isPrivacyDirty && <span className="section-status-indicator">Unsaved</span>}
+          </h3>
+          <div className="toolbar-grid">
+            <label>
+              Profile Visibility
+              <select
+                value={profileVisibility}
+                onChange={(event) => setProfileVisibility(event.target.value as '' | ProfileVisibility)}
+              >
+                <option value="">Not specified</option>
+                <option value="PUBLIC">Public</option>
+                <option value="MEMBERS_ONLY">Members only</option>
+                <option value="HIDDEN">Hidden</option>
+              </select>
+            </label>
+            <label>
+              Photo Visibility
+              <select
+                value={photoVisibility}
+                onChange={(event) => setPhotoVisibility(event.target.value as '' | PhotoVisibility)}
+              >
+                <option value="">Not specified</option>
+                <option value="VISIBLE_TO_ALL">Visible to all</option>
+                <option value="MEMBERS_ONLY">Members only</option>
+                <option value="ON_REQUEST">On request</option>
+              </select>
+            </label>
+            <label>
+              Contact Visibility
+              <select
+                value={contactVisibility}
+                onChange={(event) => setContactVisibility(event.target.value as '' | ContactVisibility)}
+              >
+                <option value="">Not specified</option>
+                <option value="VISIBLE_TO_MATCHES">Visible to matches</option>
+                <option value="ON_ACCEPTED_INTEREST">On accepted interest</option>
+                <option value="HIDDEN">Hidden</option>
+              </select>
+            </label>
+            <label>
+              ID Verified
+              <select value={idVerified} onChange={(event) => setIdVerified(event.target.value as '' | 'YES' | 'NO')}>
+                <option value="">Not specified</option>
+                <option value="YES">Yes</option>
+                <option value="NO">No</option>
+              </select>
+            </label>
+          </div>
+          <div className="inline-actions">
+            <button type="button" disabled={Boolean(savingSection) || !shouldEnableSectionSave(isPrivacyDirty)} onClick={() => void onSavePrivacySettings()}>
+              {savingSection === 'privacy' ? 'Saving Privacy Settings...' : 'Save Privacy Settings'}
+            </button>
           </div>
 
           <div className="stack">
@@ -783,7 +1486,6 @@ export function ProfilePage() {
             {isUploadingBiodata && <p className="info-text">Uploading biodata...</p>}
           </div>
 
-          <button type="submit">{saveProfileLabel}</button>
         </form>
       </AsyncState>
       <FieldError message={error} />

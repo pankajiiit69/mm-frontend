@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@fruzoos/auth-core'
 import { matrimonyApi } from '../api/matrimonyApi'
 import { AsyncState } from '../components/AsyncState'
 import { PaginationControls } from '../components/PaginationControls'
@@ -7,12 +8,15 @@ import { useAsyncData } from '../hooks/useAsyncData'
 import { useToast } from '../context/ToastContext'
 import { extractApiError } from '../utils/apiError'
 import { useMemo, useState } from 'react'
+import { getOppositeGender } from '../utils/profileCard'
 
 export function ShortlistsPage() {
+  const { auth } = useAuth()
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [actionError, setActionError] = useState('')
   const [message, setMessage] = useState('')
+  const [shortlistBusyId, setShortlistBusyId] = useState<string | null>(null)
   const { showToast } = useToast()
 
   const { data: religions } = useAsyncData(async () => {
@@ -53,20 +57,54 @@ export function ShortlistsPage() {
     [page],
   )
 
-  const profiles = data?.items ?? []
-  const inferredCardGender = undefined
+  const shouldLoadMyProfile = auth.isAuthenticated && auth.user?.role === 'USER'
+  const { data: myProfile } = useAsyncData(
+    async () => {
+      const response = await matrimonyApi.getMyProfile()
+      return response.data
+    },
+    [auth.user?.id],
+    shouldLoadMyProfile,
+  )
 
-  const onRemove = async (profileId: string) => {
+  const profiles = data?.items ?? []
+  const inferredCardGender = getOppositeGender(myProfile?.gender)
+
+  const handleSendInterest = async (profileId: number) => {
     setActionError('')
     setMessage('')
     try {
-      const response = await matrimonyApi.removeProfileFromShortlist(profileId)
-      setMessage(response.message || 'Profile removed from shortlist.')
-      showToast(response.message || 'Profile removed from shortlist.', 'success')
+      const response = await matrimonyApi.sendInterest({ toProfileId: profileId })
+      setMessage(response.message || 'Interest sent successfully.')
+      showToast(response.message || 'Interest sent successfully.', 'success')
       await reload()
     } catch (err) {
-      setActionError('Unable to remove profile from shortlist.')
-      showToast(extractApiError(err, 'Unable to remove profile from shortlist.'), 'error')
+      setActionError('Unable to send interest for this profile.')
+      showToast(extractApiError(err, 'Unable to send interest for this profile.'), 'error')
+    }
+  }
+
+  const handleToggleShortlist = async (profileId: string, isShortlisted: boolean) => {
+    setActionError('')
+    setMessage('')
+    setShortlistBusyId(profileId)
+
+    try {
+      if (isShortlisted) {
+        const response = await matrimonyApi.removeProfileFromShortlist(profileId)
+        setMessage(response.message || 'Profile removed from shortlist.')
+        showToast(response.message || 'Profile removed from shortlist.', 'success')
+      } else {
+        const response = await matrimonyApi.addProfileToShortlist(profileId)
+        setMessage(response.message || 'Profile shortlisted successfully.')
+        showToast(response.message || 'Profile shortlisted successfully.', 'success')
+      }
+      await reload()
+    } catch (err) {
+      setActionError('Unable to update shortlist for this profile.')
+      showToast(extractApiError(err, 'Unable to update shortlist for this profile.'), 'error')
+    } finally {
+      setShortlistBusyId(null)
     }
   }
 
@@ -83,24 +121,51 @@ export function ShortlistsPage() {
         emptyMessage="You have no shortlisted profiles yet."
       >
         <div className="card-grid discovery-card-grid">
-          {profiles.map((profile) => (
-            <ProfileCard
-              key={profile.profileId}
-              profile={profile}
-              religionLabel={displayValue(profile.religion, religionMap)}
-              educationLabel={displayValue(profile.education, educationMap)}
-              occupationLabel={displayValue(profile.occupation, occupationMap)}
-              avatarGender={inferredCardGender}
-              onOpen={() => navigate(`/profiles/${profile.referenceId}`)}
-              actions={
-                <>
-                <button type="button" onClick={() => void onRemove(profile.profileId)}>
-                  Remove
-                </button>
-                </>
-              }
-            />
-          ))}
+          {profiles.map((profile) => {
+            const isShortlisted = Boolean(profile.shortlisted)
+            const hasInterest = Boolean(profile.interestSentStatus || profile.interestReceivedStatus)
+
+            return (
+              <ProfileCard
+                key={profile.profileId}
+                profile={profile}
+                religionLabel={displayValue(profile.religion, religionMap)}
+                educationLabel={displayValue(profile.education, educationMap)}
+                occupationLabel={displayValue(profile.occupation, occupationMap)}
+                avatarGender={inferredCardGender}
+                onOpen={() => navigate(`/profiles/${profile.referenceId}`)}
+                cornerAction={
+                  <button
+                    type="button"
+                    className={`profile-card-heart-button${isShortlisted ? ' profile-card-heart-button-active' : ''}`}
+                    aria-label={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
+                    title={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
+                    disabled={shortlistBusyId === profile.profileId}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      void handleToggleShortlist(profile.profileId, isShortlisted)
+                    }}
+                  >
+                    ♥
+                  </button>
+                }
+                actions={
+                  <>
+                    {hasInterest ? (
+                      <button type="button" onClick={() => navigate('/interests')}>
+                        View Interest
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => void handleSendInterest(Number(profile.profileId))}>
+                        Send Interest
+                      </button>
+                    )}
+                  </>
+                }
+              />
+            )
+          })}
         </div>
       </AsyncState>
 

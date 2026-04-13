@@ -10,6 +10,7 @@ import { useAsyncData } from '../hooks/useAsyncData'
 import type { Gender, MaritalStatus, PicklistItem } from '../types/matrimony'
 import { useToast } from '../context/ToastContext'
 import { extractApiError } from '../utils/apiError'
+import { getOppositeGender } from '../utils/profileCard'
 
 const AGE_OPTIONS = Array.from({ length: 63 }, (_, index) => String(index + 18))
 const DISCOVERY_FILTERS_STORAGE_KEY = 'mm.discovery.filters.v1'
@@ -37,12 +38,6 @@ function parseCsvToPicklistItems(value: string | undefined): PicklistItem[] {
     .map((item) => item.trim())
     .filter(Boolean)
     .map((item) => ({ name: item, value: item }))
-}
-
-function getOppositeGender(gender?: Gender) {
-  if (gender === 'MALE') return 'FEMALE' as const
-  if (gender === 'FEMALE') return 'MALE' as const
-  return undefined
 }
 
 function formatMaritalStatus(value: MaritalStatus | '') {
