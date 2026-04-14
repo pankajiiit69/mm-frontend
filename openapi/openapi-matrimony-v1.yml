@@ -665,7 +665,7 @@ paths:
         - $ref: '#/components/parameters/SizeParam'
       responses:
         '200':
-          description: Sent interest page
+          description: Sent interest page (toProfileFullName and toProfileImageThumbnailDataUrl are populated)
           content:
             application/json:
               schema:
@@ -681,7 +681,7 @@ paths:
         - $ref: '#/components/parameters/SizeParam'
       responses:
         '200':
-          description: Received interest page
+          description: Received interest page (fromProfileFullName and fromProfileImageThumbnailDataUrl are populated)
           content:
             application/json:
               schema:
@@ -1689,6 +1689,22 @@ components:
           type: string
           nullable: true
           example: VVKFAA0001
+        fromProfileFullName:
+          type: string
+          nullable: true
+          description: Populated for received interest list/items.
+        toProfileFullName:
+          type: string
+          nullable: true
+          description: Populated for sent interest list/items.
+        fromProfileImageThumbnailDataUrl:
+          type: string
+          nullable: true
+          description: Data URL for fromProfile thumbnail (for example data:image/webp;base64,...), populated for received interest list/items.
+        toProfileImageThumbnailDataUrl:
+          type: string
+          nullable: true
+          description: Data URL for toProfile thumbnail (for example data:image/webp;base64,...), populated for sent interest list/items.
         status:
           $ref: '#/components/schemas/InterestStatus'
         message:

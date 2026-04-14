@@ -140,6 +140,12 @@ export interface Interest {
   toProfileId: string
   fromReferenceId?: string
   toReferenceId?: string
+  fromProfileFullName?: string
+  toProfileFullName?: string
+  fromProfileImageThumbnailDataUrl?: string
+  toProfileImageThumbnailDataUrl?: string
+  fromProfileImageThumbnailBlob?: string
+  toProfileImageThumbnailBlob?: string
   status: InterestStatus
   message?: string
   createdAt: string

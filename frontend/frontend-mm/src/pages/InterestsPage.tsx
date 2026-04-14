@@ -11,6 +11,17 @@ import { extractApiError } from '../utils/apiError'
 
 type Tab = 'sent' | 'received'
 
+function resolveThumbnailSrc(blob?: string) {
+  const value = blob?.trim()
+  if (!value) {
+    return ''
+  }
+  if (value.startsWith('data:image/')) {
+    return value
+  }
+  return `data:image/jpeg;base64,${value}`
+}
+
 function resolveInterestStatusClass(status: InterestStatus) {
   if (status === 'ACCEPTED') return 'interest-status-chip interest-status-chip-accepted'
   if (status === 'DECLINED' || status === 'WITHDRAWN') return 'interest-status-chip interest-status-chip-declined'
@@ -120,7 +131,7 @@ export function InterestsPage() {
           <table className="table interest-table">
             <thead>
               <tr>
-                <th>{tab === 'sent' ? 'To Ref ID' : 'From Ref ID'}</th>
+                <th>{tab === 'sent' ? 'To Profile' : 'From Profile'}</th>
                 <th>Status</th>
                 <th>Created</th>
                 <th>Actions</th>
@@ -131,17 +142,40 @@ export function InterestsPage() {
                 const fromRef = interest.fromReferenceId?.trim() || ''
                 const toRef = interest.toReferenceId?.trim() || ''
                 const counterpartReferenceId = tab === 'sent' ? toRef : fromRef
+                const counterpartFullName = tab === 'sent'
+                  ? interest.toProfileFullName?.trim()
+                  : interest.fromProfileFullName?.trim()
+                const thumbnailSrc = resolveThumbnailSrc(
+                  tab === 'sent'
+                    ? interest.toProfileImageThumbnailDataUrl ?? interest.toProfileImageThumbnailBlob
+                    : interest.fromProfileImageThumbnailDataUrl ?? interest.fromProfileImageThumbnailBlob,
+                )
 
                 return (
                   <tr key={interest.id}>
                     <td>
-                      {counterpartReferenceId ? (
-                        <Link className="interest-reference-link" to={`/profiles/${counterpartReferenceId}`}>
-                          {counterpartReferenceId}
-                        </Link>
-                      ) : (
-                        <span className="info-text">-</span>
-                      )}
+                      <div className="interest-profile-cell">
+                        {thumbnailSrc ? (
+                          <img
+                            className="interest-profile-thumbnail"
+                            src={thumbnailSrc}
+                            alt={counterpartFullName || counterpartReferenceId || 'Profile'}
+                          />
+                        ) : (
+                          <div className="interest-profile-thumbnail interest-profile-thumbnail-placeholder" aria-hidden="true" />
+                        )}
+
+                        <div className="interest-profile-meta">
+                          <div className="interest-profile-name">{counterpartFullName || '-'}</div>
+                          {counterpartReferenceId ? (
+                            <Link className="interest-reference-link" to={`/profiles/${counterpartReferenceId}`}>
+                              {counterpartReferenceId}
+                            </Link>
+                          ) : (
+                            <span className="info-text">-</span>
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td>
                       <span className={resolveInterestStatusClass(interest.status)}>{formatEnumLabel(interest.status)}</span>
