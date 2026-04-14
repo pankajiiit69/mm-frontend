@@ -30,12 +30,154 @@ function asList(values: string[] | undefined, fallback = '-') {
   return values.join(', ')
 }
 
+function addPdfSection(
+  doc: {
+    internal: { pageSize: { getHeight: () => number } }
+    setFontSize: (size: number) => void
+    setFont: (fontName: string, fontStyle?: string) => void
+    splitTextToSize: (text: string, maxWidth: number) => string[]
+    text: (text: string | string[], x: number, y: number) => void
+    addPage: () => void
+  },
+  title: string,
+  lines: string[],
+  y: number,
+  onPageAdded?: () => void,
+) {
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const left = 14
+  const contentWidth = 182
+  const gutter = 8
+  const columnWidth = (contentWidth - gutter) / 2
+  const right = left + columnWidth + gutter
+  const lineHeight = 6
+
+  if (y > pageHeight - 24) {
+    doc.addPage()
+    y = 18
+    onPageAdded?.()
+  }
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(14)
+  doc.text(title, left, y)
+  y += 8
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(11)
+
+  for (let index = 0; index < lines.length; index += 2) {
+    const leftLine = lines[index] ?? ''
+    const rightLine = lines[index + 1] ?? ''
+
+    const leftWrapped = leftLine ? doc.splitTextToSize(leftLine, columnWidth) : []
+    const rightWrapped = rightLine ? doc.splitTextToSize(rightLine, columnWidth) : []
+    const rowHeight = Math.max(leftWrapped.length, rightWrapped.length, 1) * lineHeight
+
+    if (y + rowHeight > pageHeight - 12) {
+      doc.addPage()
+      y = 18
+      onPageAdded?.()
+    }
+
+    if (leftWrapped.length > 0) {
+      doc.text(leftWrapped, left, y)
+    }
+    if (rightWrapped.length > 0) {
+      doc.text(rightWrapped, right, y)
+    }
+
+    y += rowHeight
+  }
+
+  return y + 4
+}
+
+function hasRenderableValue(value: unknown) {
+  if (value === undefined || value === null) {
+    return false
+  }
+
+  if (typeof value === 'string') {
+    return value.trim().length > 0
+  }
+
+  if (Array.isArray(value)) {
+    return value.length > 0
+  }
+
+  return true
+}
+
+function lineIfValue(label: string, value: unknown) {
+  if (!hasRenderableValue(value)) {
+    return null
+  }
+  return `${label}: ${String(value).trim()}`
+}
+
+async function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result)
+      } else {
+        reject(new Error('Unable to read image data.'))
+      }
+    }
+    reader.onerror = () => reject(new Error('Unable to read image data.'))
+    reader.readAsDataURL(blob)
+  })
+}
+
+async function getImageDimensions(imageDataUrl: string) {
+  return new Promise<{ width: number; height: number }>((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight })
+    image.onerror = () => reject(new Error('Unable to load image dimensions.'))
+    image.src = imageDataUrl
+  })
+}
+
+async function toPdfCompatibleImage(imageDataUrl: string): Promise<{ dataUrl: string; format: 'PNG' | 'JPEG' }> {
+  const mimeMatch = imageDataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/)?.[1]?.toLowerCase()
+  if (mimeMatch === 'image/png') {
+    return { dataUrl: imageDataUrl, format: 'PNG' }
+  }
+  if (mimeMatch === 'image/jpeg' || mimeMatch === 'image/jpg') {
+    return { dataUrl: imageDataUrl, format: 'JPEG' }
+  }
+
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const nextImage = new Image()
+    nextImage.onload = () => resolve(nextImage)
+    nextImage.onerror = () => reject(new Error('Unable to convert image.'))
+    nextImage.src = imageDataUrl
+  })
+
+  const canvas = document.createElement('canvas')
+  canvas.width = image.naturalWidth
+  canvas.height = image.naturalHeight
+  const context = canvas.getContext('2d')
+  if (!context) {
+    throw new Error('Unable to render image for PDF.')
+  }
+
+  context.drawImage(image, 0, 0)
+  return {
+    dataUrl: canvas.toDataURL('image/jpeg', 0.92),
+    format: 'JPEG',
+  }
+}
+
 export function ProfileDetailPage() {
   const { referenceId } = useParams<{ referenceId: string }>()
   const navigate = useNavigate()
   const [message, setMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [isDownloadingBiodata, setIsDownloadingBiodata] = useState(false)
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
   const [isShortlistBusy, setIsShortlistBusy] = useState(false)
   const [shortlistOverride, setShortlistOverride] = useState<boolean | null>(null)
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
@@ -135,6 +277,198 @@ export function ProfileDetailPage() {
       showToast(extractApiError(err, 'Biodata not available for this profile.'), 'error')
     } finally {
       setIsDownloadingBiodata(false)
+    }
+  }
+
+  const onDownloadGeneratedBiodata = async () => {
+    if (!profile) return
+
+    setMessage('')
+    setErrorMessage('')
+    setIsGeneratingPdf(true)
+
+    try {
+      const { jsPDF } = await import('jspdf')
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+      const watermarkTextRaw =
+        import.meta.env['GENERATED_BIODATA_WATERMARK_TEXT'] ??
+        import.meta.env['VITE_GENERATED_BIODATA_WATERMARK_TEXT'] ??
+        ''
+      const watermarkText = String(watermarkTextRaw).trim()
+
+      const getProfilePhotoForPdf = async () => {
+        if (profile.profilePhotoIdentifier?.trim()) {
+          try {
+            const response = await matrimonyApi.getPhotoContentByIdentifier(profile.profilePhotoIdentifier.trim())
+            const imageDataUrl = response.data.imageDataUrl?.trim()
+            if (imageDataUrl) {
+              return imageDataUrl
+            }
+          } catch {
+            // Fall through to URL-based loading.
+          }
+        }
+
+        if (profile.profilePhotoUrl?.trim()) {
+          try {
+            const response = await fetch(profile.profilePhotoUrl.trim(), { credentials: 'include' })
+            if (response.ok) {
+              const imageBlob = await response.blob()
+              return await blobToDataUrl(imageBlob)
+            }
+          } catch {
+            // Ignore photo loading failure and continue generating text-only PDF.
+          }
+        }
+
+        return undefined
+      }
+
+      const fullName = asText(profile.fullName)
+      const fileSafeName = fullName.replace(/[^a-zA-Z0-9-_ ]/g, '').trim().replace(/\s+/g, '_') || 'profile'
+
+      const yesNoOrUndefined = (value: boolean | undefined | null) => {
+        if (value === undefined || value === null) return undefined
+        return value ? 'Yes' : 'No'
+      }
+
+      const listOrUndefined = (values?: string[]) => {
+        if (!values) return undefined
+        const normalized = values.map((value) => value.trim()).filter(Boolean)
+        return normalized.length > 0 ? normalized.join(', ') : undefined
+      }
+
+      const enumOrUndefined = (value?: string) => {
+        if (!value?.trim()) return undefined
+        return formatEnumLabel(value)
+      }
+
+      const addSectionIfNotEmpty = (title: string, lines: Array<string | null>, y: number) => {
+        const validLines = lines.filter((line): line is string => Boolean(line))
+        if (validLines.length === 0) {
+          return y
+        }
+        return addPdfSection(doc, title, validLines, y, drawWatermarkOnCurrentPage)
+      }
+
+      const drawWatermarkOnCurrentPage = () => {
+        if (!watermarkText) return
+        const pageHeight = doc.internal.pageSize.getHeight()
+        const watermarkFontSize = 86
+        const watermarkStartX = 14
+        const watermarkStartY = pageHeight * 0.9
+
+        doc.setTextColor(242, 242, 242)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(watermarkFontSize)
+        doc.text(watermarkText, watermarkStartX, watermarkStartY, { align: 'left', angle: 45 })
+        doc.setTextColor(0, 0, 0)
+      }
+
+      drawWatermarkOnCurrentPage()
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(18)
+      doc.text(`${fullName} - Biodata`, 14, 16)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(11)
+      doc.text(`Ref ID: ${asText(profile.referenceId)}`, 14, 23)
+
+      let y = 32
+
+      const profilePhotoDataUrl = await getProfilePhotoForPdf()
+      if (profilePhotoDataUrl) {
+        try {
+          const { dataUrl, format } = await toPdfCompatibleImage(profilePhotoDataUrl)
+          const dimensions = await getImageDimensions(dataUrl)
+          const maxWidth = 38
+          const maxHeight = 48
+          const scale = Math.min(maxWidth / dimensions.width, maxHeight / dimensions.height)
+          const drawWidth = Math.max(18, dimensions.width * scale)
+          const drawHeight = Math.max(18, dimensions.height * scale)
+          const imageX = 210 - 14 - drawWidth
+          const imageY = 12
+          doc.addImage(dataUrl, format, imageX, imageY, drawWidth, drawHeight)
+          y = Math.max(y, imageY + drawHeight + 6)
+        } catch {
+          // Continue with the rest of the PDF if photo rendering fails.
+        }
+      }
+
+      y = addSectionIfNotEmpty('Basic Details', [
+        lineIfValue('Name', profile.fullName),
+        lineIfValue('Gender', enumOrUndefined(profile.gender)),
+        lineIfValue('Date Of Birth', profile.dateOfBirth),
+        lineIfValue('Relation To User', enumOrUndefined(profile.relationToUser)),
+        lineIfValue('Marital Status', enumOrUndefined(profile.maritalStatus)),
+        lineIfValue('City', profile.city),
+        lineIfValue('Area Code', profile.areaCode),
+        lineIfValue('State', profile.state),
+        lineIfValue('Country', profile.country),
+      ], y)
+
+      y = addSectionIfNotEmpty('Community Details', [
+        lineIfValue('Religion', profile.religion),
+        lineIfValue('Mother Tongue', profile.motherTongue),
+        lineIfValue('Caste', profile.caste),
+        lineIfValue('Sub Caste', profile.subCaste),
+        lineIfValue('Languages Known', listOrUndefined(profile.languagesKnown)),
+      ], y)
+
+      y = addSectionIfNotEmpty('Professional Details', [
+        lineIfValue('Education', profile.education),
+        lineIfValue('Occupation', profile.occupation),
+        lineIfValue('Employment Type', enumOrUndefined(profile.employmentType)),
+        lineIfValue('Company Name', profile.companyName),
+        lineIfValue('Work Location', profile.workLocation),
+        lineIfValue('Annual Income', profile.annualIncome !== undefined && profile.annualIncome !== null ? `₹${Math.round(profile.annualIncome).toLocaleString('en-IN')}` : undefined),
+        lineIfValue('Height (cm)', profile.heightCm),
+        lineIfValue('Diet', enumOrUndefined(profile.diet)),
+        lineIfValue('Smoking', yesNoOrUndefined(profile.smoking)),
+        lineIfValue('Drinking', yesNoOrUndefined(profile.drinking)),
+        lineIfValue('Fitness Level', profile.fitnessLevel),
+        lineIfValue('Hobbies', listOrUndefined(profile.hobbies)),
+      ], y)
+
+      y = addSectionIfNotEmpty('Family Details', [
+        lineIfValue('Family Type', enumOrUndefined(profile.familyType)),
+        lineIfValue('Family Values', enumOrUndefined(profile.familyValues)),
+        lineIfValue("Father's Occupation", profile.fatherOccupation),
+        lineIfValue("Mother's Occupation", profile.motherOccupation),
+        lineIfValue('Siblings Count', profile.siblingsCount),
+        lineIfValue('Family Location', profile.familyLocation),
+      ], y)
+
+      const preferredAgeRange =
+        profile.preference?.minAge !== undefined || profile.preference?.maxAge !== undefined
+          ? `${profile.preference?.minAge ?? '-'} / ${profile.preference?.maxAge ?? '-'}`
+          : undefined
+
+      y = addSectionIfNotEmpty('Partner Preferences', [
+        lineIfValue('Preferred City', profile.preference?.preferredCity),
+        lineIfValue('Preferred Religion', profile.preference?.preferredReligion),
+        lineIfValue('Preferred Caste', profile.preference?.preferredCaste),
+        lineIfValue('Preferred Education', profile.preference?.preferredEducation),
+        lineIfValue('Preferred Occupation', profile.preference?.preferredOccupation),
+        lineIfValue('Preferred Location', profile.preference?.preferredLocation),
+        lineIfValue('Preferred Min/Max Age', preferredAgeRange),
+      ], y)
+
+      y = addSectionIfNotEmpty('Bio', [lineIfValue('Summary', profile.bio)], y)
+      y = addSectionIfNotEmpty('About Family', [lineIfValue('Summary', profile.aboutFamily)], y)
+
+      const generatedAt = new Date().toLocaleString()
+      doc.setFont('helvetica', 'italic')
+      doc.setFontSize(9)
+      doc.text(`Generated on ${generatedAt}`, 14, doc.internal.pageSize.getHeight() - 8)
+
+      doc.save(`${fileSafeName}_biodata.pdf`)
+      setMessage('Generated biodata PDF downloaded successfully.')
+      showToast('Generated biodata PDF downloaded successfully.', 'success')
+    } catch (err) {
+      setErrorMessage('Unable to generate biodata PDF for this profile.')
+      showToast(extractApiError(err, 'Unable to generate biodata PDF for this profile.'), 'error')
+    } finally {
+      setIsGeneratingPdf(false)
     }
   }
 
@@ -469,6 +803,9 @@ export function ProfileDetailPage() {
               )}
               <button type="button" disabled={isShortlistBusy} onClick={() => void onToggleShortlist()}>
                 {isShortlisted ? 'Remove from Shortlist' : 'Add to Shortlist'}
+              </button>
+              <button type="button" disabled={isGeneratingPdf} onClick={() => void onDownloadGeneratedBiodata()}>
+                {isGeneratingPdf ? 'Generating PDF...' : 'Download Generated Biodata'}
               </button>
             </div>
 
