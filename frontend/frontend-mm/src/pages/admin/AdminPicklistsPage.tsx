@@ -45,6 +45,7 @@ export function AdminPicklistsPage() {
   )
 
   const items = data?.items ?? []
+  const activeItems = items.filter((entry) => entry.active).length
   const totalPages = data?.totalPages ?? 1
   const currentPage = Math.min(page, totalPages)
 
@@ -178,6 +179,24 @@ export function AdminPicklistsPage() {
   return (
     <section className="stack-wide">
       <h1>Picklists</h1>
+      <p className="info-text">Manage enum values that drive forms and filters across the platform.</p>
+
+      <div className="admin-kpi-strip">
+        <article className="admin-kpi-tile">
+          <span className="admin-kpi-label">Visible In Current Page</span>
+          <strong className="admin-kpi-value">{items.length}</strong>
+        </article>
+        <article className="admin-kpi-tile">
+          <span className="admin-kpi-label">Active Entries</span>
+          <strong className="admin-kpi-value">{activeItems}</strong>
+        </article>
+        <article className="admin-kpi-tile">
+          <span className="admin-kpi-label">Current Page</span>
+          <strong className="admin-kpi-value">
+            {currentPage} / {totalPages}
+          </strong>
+        </article>
+      </div>
 
       <form className="card stack-wide" onSubmit={onSubmit}>
         <h3>Create Picklist Entry</h3>
@@ -259,6 +278,20 @@ export function AdminPicklistsPage() {
             }}
           />
         </label>
+
+        <div className="inline-actions toolbar-grid-full-span">
+          <button
+            type="button"
+            onClick={() => {
+              setPage(1)
+              setPicklistNameFilter('')
+              setLangFilter('')
+            }}
+          >
+            Reset Filters
+          </button>
+          <span className="info-text">{data?.total ?? 0} total entries</span>
+        </div>
       </div>
 
       {message && <p className="success-text">{message}</p>}
@@ -355,10 +388,10 @@ export function AdminPicklistsPage() {
                       />
                       Active
                     </label>
-                  ) : entry.active ? (
-                    'Yes'
                   ) : (
-                    'No'
+                    <span className={`admin-status-chip ${entry.active ? 'admin-status-chip-success' : 'admin-status-chip-muted'}`}>
+                      {entry.active ? 'Active' : 'Inactive'}
+                    </span>
                   )}
                 </td>
                 <td className="table-cell-actions">

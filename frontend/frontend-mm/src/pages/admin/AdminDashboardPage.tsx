@@ -11,10 +11,30 @@ export function AdminDashboardPage() {
   return (
     <section className="stack-wide">
       <h1>Dashboard</h1>
+      <p className="info-text">Monitor account growth, profile readiness, and distribution signals at a glance.</p>
 
       <AsyncState loading={loading} error={error}>
         {data && (
           <>
+            <div className="admin-kpi-strip">
+              <article className="admin-kpi-tile">
+                <span className="admin-kpi-label">User Activation</span>
+                <strong className="admin-kpi-value">
+                  {data.totalUsers > 0 ? `${Math.round((data.activeUsers / data.totalUsers) * 100)}%` : '0%'}
+                </strong>
+              </article>
+              <article className="admin-kpi-tile">
+                <span className="admin-kpi-label">Profile Verification</span>
+                <strong className="admin-kpi-value">
+                  {data.totalProfiles > 0 ? `${Math.round((data.verifiedProfiles / data.totalProfiles) * 100)}%` : '0%'}
+                </strong>
+              </article>
+              <article className="admin-kpi-tile">
+                <span className="admin-kpi-label">New Users (7 Days)</span>
+                <strong className="admin-kpi-value">{data.newUsersThisWeek}</strong>
+              </article>
+            </div>
+
             <div className="stats-grid">
               <article className="stat-card">
                 <h3>Total Users</h3>
@@ -51,13 +71,26 @@ export function AdminDashboardPage() {
               {Object.keys(data.profilesByGender).length === 0 ? (
                 <p className="info-text">No gender distribution data available.</p>
               ) : (
-                <ul>
-                  {Object.entries(data.profilesByGender).map(([gender, count]) => (
-                    <li key={gender}>
-                      {gender}: {count}
-                    </li>
-                  ))}
-                </ul>
+                <div className="admin-gender-stats">
+                  {Object.entries(data.profilesByGender).map(([gender, count]) => {
+                    const total = Object.values(data.profilesByGender).reduce((sum, value) => sum + value, 0)
+                    const ratio = total > 0 ? Math.round((count / total) * 100) : 0
+
+                    return (
+                      <div key={gender} className="admin-gender-row">
+                        <div className="admin-gender-row-head">
+                          <span>{gender}</span>
+                          <strong>
+                            {count} ({ratio}%)
+                          </strong>
+                        </div>
+                        <div className="admin-gender-track" role="presentation">
+                          <span className="admin-gender-fill" style={{ width: `${ratio}%` }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               )}
             </article>
           </>

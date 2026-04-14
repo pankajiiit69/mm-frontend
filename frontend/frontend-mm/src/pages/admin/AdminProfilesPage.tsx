@@ -6,6 +6,7 @@ import { useAsyncData } from '../../hooks/useAsyncData'
 import type { Gender } from '../../types/matrimony'
 import { useToast } from '../../context/ToastContext'
 import { extractApiError } from '../../utils/apiError'
+import { formatEnumLabel } from '../../utils/format'
 
 export function AdminProfilesPage() {
   const [page, setPage] = useState(1)
@@ -94,6 +95,7 @@ export function AdminProfilesPage() {
   return (
     <section className="stack-wide">
       <h1>Profiles</h1>
+      <p className="info-text">Review profile quality, verify records, and manage invalid entries.</p>
 
       <div className="toolbar-grid">
         <label>
@@ -159,6 +161,23 @@ export function AdminProfilesPage() {
             <option value="UNVERIFIED">Unverified</option>
           </select>
         </label>
+
+        <div className="inline-actions toolbar-grid-full-span">
+          <button
+            type="button"
+            onClick={() => {
+              setPage(1)
+              setFullName('')
+              setGender('')
+              setReligion('')
+              setCity('')
+              setVerified('ALL')
+            }}
+          >
+            Reset Filters
+          </button>
+          <span className="info-text">{data?.total ?? 0} profiles</span>
+        </div>
       </div>
 
       {message && <p className="success-text">{message}</p>}
@@ -174,7 +193,7 @@ export function AdminProfilesPage() {
           <thead>
             <tr>
               <th>ID</th>
-              <th>Name</th>
+              <th>Profile</th>
               <th>Age</th>
               <th>City</th>
               <th>Religion</th>
@@ -187,12 +206,28 @@ export function AdminProfilesPage() {
             {profiles.map((profile) => (
               <tr key={profile.profileId}>
                 <td>{profile.profileId}</td>
-                <td>{profile.fullName}</td>
+                <td>
+                  <div className="admin-profile-cell">
+                    {profile.profilePhotoUrl ? (
+                      <img className="admin-profile-thumb" src={profile.profilePhotoUrl} alt={profile.fullName} />
+                    ) : (
+                      <div className="admin-profile-thumb admin-profile-thumb-placeholder" aria-hidden="true" />
+                    )}
+                    <div className="admin-profile-meta">
+                      <div className="admin-profile-name">{profile.fullName}</div>
+                      <div className="info-text">Ref: {profile.referenceId}</div>
+                    </div>
+                  </div>
+                </td>
                 <td>{profile.age}</td>
                 <td>{profile.city}</td>
                 <td>{profile.religion}</td>
-                <td>{profile.maritalStatus}</td>
-                <td>{profile.verified ? 'VERIFIED' : 'UNVERIFIED'}</td>
+                <td>{formatEnumLabel(profile.maritalStatus)}</td>
+                <td>
+                  <span className={`admin-status-chip ${profile.verified ? 'admin-status-chip-success' : 'admin-status-chip-muted'}`}>
+                    {profile.verified ? 'Verified' : 'Unverified'}
+                  </span>
+                </td>
                 <td>
                   <div className="row-actions-menu">
                     <button

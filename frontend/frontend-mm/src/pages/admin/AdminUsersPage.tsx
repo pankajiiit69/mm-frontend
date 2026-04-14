@@ -6,6 +6,7 @@ import { useAsyncData } from '../../hooks/useAsyncData'
 import type { VerificationStatus } from '../../types/matrimony'
 import { useToast } from '../../context/ToastContext'
 import { extractApiError } from '../../utils/apiError'
+import { formatEnumLabel } from '../../utils/format'
 
 const VERIFICATION_STATUS_OPTIONS: VerificationStatus[] = [
   'PENDING_EMAIL',
@@ -88,6 +89,7 @@ export function AdminUsersPage() {
   return (
     <section className="stack-wide">
       <h1>Users</h1>
+      <p className="info-text">Search, verify, and control account activation from one place.</p>
 
       <div className="toolbar-grid">
         <label>
@@ -144,6 +146,22 @@ export function AdminUsersPage() {
             <option value="INACTIVE">Inactive</option>
           </select>
         </label>
+
+        <div className="inline-actions toolbar-grid-full-span">
+          <button
+            type="button"
+            onClick={() => {
+              setPage(1)
+              setEmail('')
+              setName('')
+              setVerificationStatus('')
+              setActiveFilter('ALL')
+            }}
+          >
+            Reset Filters
+          </button>
+          <span className="info-text">{data?.total ?? 0} users</span>
+        </div>
       </div>
 
       {message && <p className="success-text">{message}</p>}
@@ -155,61 +173,69 @@ export function AdminUsersPage() {
         isEmpty={!loading && !error && users.length === 0}
         emptyMessage="No users found."
       >
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Active</th>
-              <th>Verification</th>
-              <th>Created At</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id}>
-                <td>{user.id}</td>
-                <td>{user.name}</td>
-                <td>{user.email}</td>
-                <td>{user.phone ?? '-'}</td>
-                <td>{user.active ? 'Yes' : 'No'}</td>
-                <td>{user.verificationStatus}</td>
-                <td>{new Date(user.createdAt).toLocaleString()}</td>
-                <td>
-                  <div className="inline-actions">
-                    <button
-                      type="button"
-                      disabled={user.active && isProtectedAdminUser(user.email)}
-                      title={
-                        user.active && isProtectedAdminUser(user.email)
-                          ? 'Admin users cannot be deactivated or deleted'
-                          : undefined
-                      }
-                      onClick={() => void toggleUserActive(user.id, !user.active, user.email)}
-                    >
-                      {user.active ? 'Deactivate' : 'Activate'}
-                    </button>
-                    <select
-                      value={user.verificationStatus}
-                      onChange={(event) =>
-                        void applyVerificationStatus(user.id, event.target.value as VerificationStatus)
-                      }
-                    >
-                      {VERIFICATION_STATUS_OPTIONS.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </td>
+        <div className="interest-table-shell">
+          <table className="table admin-users-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Active</th>
+                <th>Verification</th>
+                <th>Created At</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.id}>
+                  <td>{user.id}</td>
+                  <td>{user.name}</td>
+                  <td>{user.email}</td>
+                  <td>{user.phone ?? '-'}</td>
+                  <td>
+                    <span className={`admin-status-chip ${user.active ? 'admin-status-chip-success' : 'admin-status-chip-muted'}`}>
+                      {user.active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="admin-status-chip admin-status-chip-info">{formatEnumLabel(user.verificationStatus)}</span>
+                  </td>
+                  <td>{new Date(user.createdAt).toLocaleString()}</td>
+                  <td>
+                    <div className="inline-actions">
+                      <button
+                        type="button"
+                        disabled={user.active && isProtectedAdminUser(user.email)}
+                        title={
+                          user.active && isProtectedAdminUser(user.email)
+                            ? 'Admin users cannot be deactivated or deleted'
+                            : undefined
+                        }
+                        onClick={() => void toggleUserActive(user.id, !user.active, user.email)}
+                      >
+                        {user.active ? 'Deactivate' : 'Activate'}
+                      </button>
+                      <select
+                        value={user.verificationStatus}
+                        onChange={(event) =>
+                          void applyVerificationStatus(user.id, event.target.value as VerificationStatus)
+                        }
+                      >
+                        {VERIFICATION_STATUS_OPTIONS.map((status) => (
+                          <option key={status} value={status}>
+                            {formatEnumLabel(status)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </AsyncState>
 
       <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setPage} />

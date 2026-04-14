@@ -925,6 +925,132 @@ button:disabled {
   overflow: visible;
 }
 
+.admin-users-table {
+  display: table;
+  white-space: normal;
+}
+
+.admin-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-kpi-tile {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid #dbe4f0;
+  border-radius: 0.65rem;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  padding: 0.75rem 0.85rem;
+}
+
+.admin-kpi-label {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #475569;
+  font-weight: 700;
+}
+
+.admin-kpi-value {
+  font-size: 1.45rem;
+  color: #0f172a;
+  line-height: 1.05;
+}
+
+.admin-status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.16rem 0.6rem;
+  font-size: 0.73rem;
+  font-weight: 700;
+  line-height: 1.2;
+  border: 1px solid transparent;
+}
+
+.admin-status-chip-success {
+  color: #166534;
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.admin-status-chip-muted {
+  color: #334155;
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.admin-status-chip-info {
+  color: #1e3a8a;
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.admin-profile-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.admin-profile-thumb {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid #d1d5db;
+  background: #f3f4f6;
+}
+
+.admin-profile-thumb-placeholder {
+  background: linear-gradient(145deg, #f3f4f6 0%, #e5e7eb 100%);
+}
+
+.admin-profile-meta {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.admin-profile-name {
+  color: #0f172a;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.admin-gender-stats {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.admin-gender-row {
+  display: grid;
+  gap: 0.34rem;
+}
+
+.admin-gender-row-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.admin-gender-track {
+  height: 0.54rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.admin-gender-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0ea5e9 0%, #2563eb 100%);
+}
+
 .interest-tabs {
   display: inline-flex;
   border: 1px solid #d1d5db;
