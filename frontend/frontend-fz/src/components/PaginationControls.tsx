@@ -9,14 +9,22 @@ export function PaginationControls({ currentPage, totalPages, onChange }: Pagina
 
   return (
     <div className="pagination">
-      <button disabled={currentPage === 1} onClick={() => onChange(currentPage - 1)}>
-        Previous
+      <button
+        aria-label="Previous page"
+        disabled={currentPage === 1}
+        onClick={() => onChange(currentPage - 1)}
+      >
+        {'<'}
       </button>
       <span>
         Page {currentPage} of {totalPages}
       </span>
-      <button disabled={currentPage === totalPages} onClick={() => onChange(currentPage + 1)}>
-        Next
+      <button
+        aria-label="Next page"
+        disabled={currentPage === totalPages}
+        onClick={() => onChange(currentPage + 1)}
+      >
+        {'>'}
       </button>
     </div>
   )

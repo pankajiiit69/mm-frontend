@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useAuth } from '@fruzoos/auth-core'
 import { orderApi } from '../api/orderApi'
 import { FieldError } from '../components/FieldError'
 import { useCart } from '../hooks/useCart'
@@ -6,6 +7,7 @@ import { isAddressValid } from '../utils/validation'
 import type { PaymentMethod } from '../types/order'
 
 export function CheckoutPage() {
+  const { auth } = useAuth()
   const { cart, clearCart } = useCart()
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('COD')
@@ -41,7 +43,7 @@ export function CheckoutPage() {
           paymentMethod,
         },
         {
-          userId: cart.userId,
+          userId: auth.user?.id ?? cart.userId,
           totalAmount,
           items: cart.items.map((item) => ({
             productId: item.productId,
@@ -67,9 +69,6 @@ export function CheckoutPage() {
 
   return (
     <section className="stack-wide">
-      <h1>Checkout</h1>
-      <p>Review your order and place it with COD, CARD, or UPI payment method.</p>
-
       <form className="stack" onSubmit={submit}>
         <label>
           Delivery Address

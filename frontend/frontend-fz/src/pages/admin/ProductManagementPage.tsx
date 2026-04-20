@@ -90,9 +90,7 @@ export function ProductManagementPage() {
   }
 
   return (
-    <section className="stack-wide">
-      <h1>Product Management</h1>
-
+    <section className="stack-wide admin-page">
       <div className="toolbar-grid">
         <label>
           Search Products
@@ -124,36 +122,38 @@ export function ProductManagementPage() {
         </label>
       </div>
 
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Size</th>
-            <th>Price</th>
-            <th>Qty</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pagedProducts.map((product) => (
-            <tr key={product.id}>
-              <td>{product.name}</td>
-              <td>{product.category}</td>
-              <td>{product.bottleSizeMl}ml</td>
-              <td>₹{product.price}</td>
-              <td>{product.availableQuantity}</td>
-              <td>{product.isActive ? 'Active' : 'Inactive'}</td>
-              <td>
-                <button onClick={() => toggleActive(product.id)}>
-                  {product.isActive ? 'Deactivate' : 'Activate'}
-                </button>
-              </td>
+      <div className="orders-table-wrap">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Size</th>
+              <th>Price</th>
+              <th>Qty</th>
+              <th>Status</th>
+              <th>Action</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {pagedProducts.map((product) => (
+              <tr key={product.id}>
+                <td>{product.name}</td>
+                <td>{product.category}</td>
+                <td>{product.bottleSizeMl}ml</td>
+                <td>₹{product.price}</td>
+                <td>{product.availableQuantity}</td>
+                <td>{product.isActive ? 'Active' : 'Inactive'}</td>
+                <td>
+                  <button onClick={() => toggleActive(product.id)}>
+                    {product.isActive ? 'Deactivate' : 'Activate'}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setPage} />
 

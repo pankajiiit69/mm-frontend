@@ -46,11 +46,6 @@ export function ProductDetailPage() {
       <div className="detail-hero">
         <img src={product.imageUrl} alt={product.name} className="detail-media" loading="eager" />
         <div className="stack">
-          <h1>{product.name}</h1>
-          <p>{product.description}</p>
-          <p>
-            {product.fruitType} • {product.category} • {product.bottleSizeMl}ml
-          </p>
           <div className="detail-meta-grid">
             <p>
               <strong>Price</strong>
@@ -61,38 +56,38 @@ export function ProductDetailPage() {
               <br />{product.availableQuantity}
             </p>
           </div>
+
+          <div className="inline-actions">
+            <label>
+              Quantity
+              <input
+                type="number"
+                min={1}
+                max={Math.max(1, product.availableQuantity)}
+                value={quantity}
+                onChange={(event) => setQuantity(Number(event.target.value))}
+              />
+            </label>
+
+            <button
+              disabled={!canAdd}
+              onClick={() =>
+                void addItem({
+                  productId: product.id,
+                  name: product.name,
+                  bottleSizeMl: product.bottleSizeMl,
+                  quantity,
+                  unitPrice: product.price,
+                })
+              }
+            >
+              Add to Cart
+            </button>
+          </div>
+
+          {!canAdd && <p className="error-text">Select a valid quantity within available stock.</p>}
         </div>
       </div>
-
-      <div className="inline-actions">
-        <label>
-          Quantity
-          <input
-            type="number"
-            min={1}
-            max={Math.max(1, product.availableQuantity)}
-            value={quantity}
-            onChange={(event) => setQuantity(Number(event.target.value))}
-          />
-        </label>
-
-        <button
-          disabled={!canAdd}
-          onClick={() =>
-            void addItem({
-              productId: product.id,
-              name: product.name,
-              bottleSizeMl: product.bottleSizeMl,
-              quantity,
-              unitPrice: product.price,
-            })
-          }
-        >
-          Add to Cart
-        </button>
-      </div>
-
-      {!canAdd && <p className="error-text">Select a valid quantity within available stock.</p>}
     </section>
   )
 }

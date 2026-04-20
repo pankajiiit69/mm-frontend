@@ -85,14 +85,11 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <section>
-      <h1>Reset Password</h1>
-      <p>Complete OTP verification to set a new password for your account.</p>
-
+    <section className="stack-wide auth-page">
       {info && <p className="info-text">{info}</p>}
 
       {step === 'requestOtp' && (
-        <form onSubmit={onRequestOtp} className="stack">
+        <form onSubmit={onRequestOtp} className="stack auth-form-card">
           <label>
             Registered Mobile
             <input
@@ -108,7 +105,7 @@ export function ResetPasswordPage() {
       )}
 
       {step === 'verifyOtp' && (
-        <form onSubmit={onVerifyOtp} className="stack">
+        <form onSubmit={onVerifyOtp} className="stack auth-form-card">
           <label>
             OTP
             <input
@@ -138,7 +135,7 @@ export function ResetPasswordPage() {
       )}
 
       {step === 'resetPassword' && (
-        <form onSubmit={onResetPassword} className="stack">
+        <form onSubmit={onResetPassword} className="stack auth-form-card">
           <label>
             New Password
             <input
@@ -163,7 +160,7 @@ export function ResetPasswordPage() {
       )}
 
       {step === 'done' && (
-        <div className="stack">
+        <div className="stack auth-form-card">
           <p>Password reset is complete.</p>
           <Link to="/login">Go to Login</Link>
         </div>

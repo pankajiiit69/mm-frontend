@@ -1,188 +1,125 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { productApi } from '../api/productApi'
-import { AsyncState } from '../components/AsyncState'
-import { PaginationControls } from '../components/PaginationControls'
-import { useCart } from '../hooks/useCart'
-import { useAsyncData } from '../hooks/useAsyncData'
-import type { ProductCategory } from '../types/product'
 import bottelOrange from '../assets/images/BottelOrange.png'
 import bottelMosambi from '../assets/images/BottelMosambi.png'
 
-const categoryAccent: Record<ProductCategory, { label: string; icon: string; toneClass: string }> = {
-  CITRUS: { label: 'Citrus Boost', icon: 'CT', toneClass: 'citrus' },
-  TROPICAL: { label: 'Tropical Splash', icon: 'TR', toneClass: 'tropical' },
-  MIXED: { label: 'Fruit Mix', icon: 'MX', toneClass: 'mixed' },
-  DETOX: { label: 'Detox Blend', icon: 'DX', toneClass: 'detox' },
-  SEASONAL: { label: 'Seasonal Pick', icon: 'SN', toneClass: 'seasonal' },
-}
-
 export function HomePage() {
-  const { addItem } = useCart()
-  const [query, setQuery] = useState('')
-  const [category, setCategory] = useState<'ALL' | ProductCategory>('ALL')
-  const [availabilityOnly, setAvailabilityOnly] = useState(false)
-  const [sortBy, setSortBy] = useState<'name' | 'priceAsc' | 'priceDesc' | 'newest'>('newest')
-  const [page, setPage] = useState(1)
-
-  const pageSize = 3
-
-  const { data, loading, error } = useAsyncData(
-    async () => {
-      const response = await productApi.list({
-        page,
-        size: pageSize,
-        query,
-        category,
-        availabilityOnly,
-        sortBy,
-      })
-      return response.data
-    },
-    [page, query, category, availabilityOnly, sortBy],
-  )
-
-  const totalPages = data?.totalPages ?? 1
-  const currentPage = Math.min(page, totalPages)
-  const pagedProducts = data?.items ?? []
-
-  const categories: Array<'ALL' | ProductCategory> = [
-    'ALL',
-    'CITRUS',
-    'TROPICAL',
-    'MIXED',
-    'DETOX',
-    'SEASONAL',
-  ]
-
-  const handleAdd = (productId: string) => {
-    const product = pagedProducts.find((item) => item.id === productId)
-    if (!product || product.availableQuantity <= 0) return
-
-    void addItem({
-      productId: product.id,
-      name: product.name,
-      bottleSizeMl: product.bottleSizeMl,
-      quantity: 1,
-      unitPrice: product.price,
-    })
-  }
-
   return (
-    <section className="stack-wide">
-      <div className="home-hero">
-        <div className="home-hero-content">
-          <p className="hero-kicker">Cold Pressed. Same Day Fresh.</p>
-          <h1 className="hero-title">Fresh Juice Catalog</h1>
-          <p className="hero-subtitle">
-            Discover vitamin-rich blends made from real fruits, with no artificial flavors and no
-            added sugar.
-          </p>
-          <div className="hero-badges" aria-label="service highlights">
-            <span className="hero-badge">Farm Fresh Fruits</span>
-            <span className="hero-badge">Freshly Pressed Daily</span>
-            <span className="hero-badge">Quick Local Delivery</span>
+    <div className="happyjuice-home">
+      <div className="bg-orb orb-a" />
+      <div className="bg-orb orb-b" />
+
+      <div>
+        <section className="hero section-wrap">
+          <div className="hero-copy reveal">
+            <p className="eyebrow">Freshly Pressed Daily</p>
+            <h1>
+              Fresh Juice.
+              <br />
+              Real Fruit.
+              <br />
+              Fuel Your Brain.
+            </h1>
+            <p className="lead">
+              Crafted from hand-picked fruits with no concentrates, no shortcuts, and no artificial
+              flavor. Just bold, clean taste delivered fresh.
+            </p>
+            <div className="hero-cta">
+              <Link to="/catalog" className="btn">Explore Flavors</Link>
+              <a href="#story" className="link-arrow">How We Make It</a>
+            </div>
+            <ul className="stats" aria-label="Product highlights">
+              <li><strong>100%</strong> fruit juice</li>
+              <li><strong>12h</strong> from farm to bottle</li>
+              <li><strong>0g</strong> added sugar</li>
+            </ul>
           </div>
-        </div>
-        <div className="hero-visual" aria-hidden="true">
-          <img src={bottelOrange} alt="" className="hero-fruit hero-fruit-one" />
-          <img src={bottelMosambi} alt="" className="hero-fruit hero-fruit-two" />
-          <img src={bottelOrange} alt="" className="hero-fruit hero-fruit-three" />
-        </div>
-      </div>
 
-      <div className="toolbar-grid">
-        <label>
-          Search
-          <input
-            value={query}
-            onChange={(event) => {
-              setPage(1)
-              setQuery(event.target.value)
-            }}
-            placeholder="Search by name or fruit type"
-          />
-        </label>
-
-        <label>
-          Category
-          <select
-            value={category}
-            onChange={(event) => {
-              setPage(1)
-              setCategory(event.target.value as 'ALL' | ProductCategory)
-            }}
-          >
-            {categories.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          Sort By
-          <select value={sortBy} onChange={(event) => setSortBy(event.target.value as typeof sortBy)}>
-            <option value="newest">Newest</option>
-            <option value="name">Name</option>
-            <option value="priceAsc">Price: Low to High</option>
-            <option value="priceDesc">Price: High to Low</option>
-          </select>
-        </label>
-
-        <label className="checkbox-label">
-          <input
-            type="checkbox"
-            checked={availabilityOnly}
-            onChange={(event) => {
-              setPage(1)
-              setAvailabilityOnly(event.target.checked)
-            }}
-          />
-          In stock only
-        </label>
-      </div>
-
-      <AsyncState
-        loading={loading}
-        error={error}
-        isEmpty={!loading && !error && pagedProducts.length === 0}
-        emptyMessage="No products found for current filters."
-      >
-        <div className="card-grid">
-          {pagedProducts.map((product) => (
-            <article key={product.id} className={`card product-card product-card-${categoryAccent[product.category].toneClass}`}>
-              <div className="product-card-media">
-                <img src={product.imageUrl} alt={product.name} className="product-card-image" loading="lazy" />
-                <span className={`product-category-chip product-category-chip-${categoryAccent[product.category].toneClass}`}>
-                  <span aria-hidden="true">{categoryAccent[product.category].icon}</span>{' '}
-                  {categoryAccent[product.category].label}
-                </span>
+          <div className="hero-media reveal reveal-delay-1">
+            <div className="home-bottle-stack" aria-hidden="true">
+              <img src={bottelOrange} alt="" className="home-bottle home-bottle-center" />
+              <img src={bottelMosambi} alt="" className="home-bottle home-bottle-left" />
+              <img src={bottelOrange} alt="" className="home-bottle home-bottle-right" />
+            </div>
+            <div className="vitamin-rocket" aria-label="Vitamin level boost animation">
+              <div className="vitamin-rocket-icon" aria-hidden="true">
+                <span className="vitamin-rocket-body">🚀</span>
+                <span className="vitamin-rocket-flame" />
               </div>
-              <h3>{product.name}</h3>
-              <p>{product.description}</p>
-              <p>
-                {product.bottleSizeMl}ml • ₹{product.price}
-              </p>
-              <p className={product.availableQuantity > 0 ? 'product-stock-chip product-stock-chip-in' : 'product-stock-chip product-stock-chip-out'}>
-                Stock: {product.availableQuantity > 0 ? `${product.availableQuantity} available` : 'Out of stock'}
-              </p>
-              <div className="inline-actions">
-                <Link to={`/products/${product.id}`}>Details</Link>
-                <button
-                  disabled={product.availableQuantity <= 0}
-                  onClick={() => handleAdd(product.id)}
-                >
-                  Add to Cart
-                </button>
+              <span className="vitamin-rocket-text">Vitamin Boost</span>
+              <div className="vitamin-meter" aria-hidden="true">
+                <span className="vitamin-meter-fill" />
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="benefits" className="features section-wrap">
+          <article className="feature-card reveal reveal-delay-1">
+            <h2>Cold Pressed</h2>
+            <p>
+              Preserves flavor and nutrients with gentle extraction instead of heat-intensive processing.
+            </p>
+          </article>
+          <article className="feature-card reveal reveal-delay-2">
+            <h2>Farm Traceable</h2>
+            <p>
+              Every bottle can be traced to partner orchards and harvest windows for peak freshness.
+            </p>
+          </article>
+          <article className="feature-card reveal reveal-delay-3">
+            <h2>Small Batch</h2>
+            <p>
+              Mixed and bottled in short runs to keep quality high and delivery consistently fresh.
+            </p>
+          </article>
+        </section>
+
+        <section id="menu" className="menu section-wrap">
+          <div className="section-head reveal">
+            <p className="eyebrow">Choose Your Zest</p>
+            <h2>Flavor Collection</h2>
+          </div>
+          <div className="menu-grid">
+            <article className="menu-item menu-item-orange reveal reveal-delay-1">
+              <h3>Classic Orange</h3>
+              <p>Clean citrus bite with naturally sweet finish.</p>
+              <span>INR 120</span>
             </article>
-          ))}
-        </div>
-      </AsyncState>
+            <article className="menu-item menu-item-mosambi reveal reveal-delay-2">
+              <h3>Mosambi Light</h3>
+              <p>Refreshing sweet-lime flavor for daily hydration.</p>
+              <span>INR 90</span>
+            </article>
+            <article className="menu-item menu-item-mixed reveal reveal-delay-3">
+              <h3>Mixed Fruit Punch</h3>
+              <p>Layered fruit blend with smooth full-bodied taste.</p>
+              <span>INR 150</span>
+            </article>
+          </div>
+        </section>
 
-      <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setPage} />
-    </section>
+        <section id="story" className="story section-wrap">
+          <div className="story-copy reveal">
+            <p className="eyebrow">From Grove to Glass</p>
+            <h2>We Bottle Mornings.</h2>
+            <p>
+              Fruits are sourced early and pressed by midday. That rapid cycle captures peak aroma,
+              crisp flavor, and natural body in every bottle.
+            </p>
+          </div>
+          <div className="quote-box reveal reveal-delay-1">
+            <p>
+              "The first sip tastes like peeling fresh fruit in the morning sun."
+            </p>
+            <span>Customer Review</span>
+          </div>
+        </section>
+
+        <section id="contact" className="cta section-wrap reveal">
+          <h2>Start Your Fresh Routine Today</h2>
+          <Link to="/catalog" className="btn">Get Delivery</Link>
+        </section>
+      </div>
+    </div>
   )
 }

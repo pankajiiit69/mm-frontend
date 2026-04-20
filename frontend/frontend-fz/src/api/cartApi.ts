@@ -32,7 +32,7 @@ const EMPTY_CART: CartState = {
 
 let mockCart: ApiCart = {
   id: 'cart-mock',
-  userId: 'mock-user',
+  userId: 'user-1',
   items: [],
   subtotal: 0,
 }

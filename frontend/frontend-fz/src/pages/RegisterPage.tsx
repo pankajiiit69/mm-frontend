@@ -41,9 +41,11 @@ export function RegisterPage() {
   }
 
   return (
-    <section>
-      <h1>Register</h1>
-      <form onSubmit={onSubmit} className="stack">
+    <section className="stack-wide auth-page">
+      <form onSubmit={onSubmit} className="stack auth-form-card">
+        <h1 className="auth-card-title">Register</h1>
+        <p className="auth-card-subtitle">Create your account to place orders and manage your profile.</p>
+
         <label>
           Name
           <input value={name} onChange={(e) => setName(e.target.value)} required />

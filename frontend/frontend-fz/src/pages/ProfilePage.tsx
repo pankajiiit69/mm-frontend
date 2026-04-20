@@ -92,8 +92,6 @@ export function ProfilePage() {
 
   return (
     <section className="stack-wide">
-      <h1>My Profile</h1>
-      <p>Signed in as role: {auth.user?.role}</p>
       <AsyncState loading={loading} error={loadError}>
         <form className="stack" onSubmit={onSubmit}>
           <label>

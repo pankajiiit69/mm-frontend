@@ -18,8 +18,7 @@ export function InventoryManagementPage() {
   }
 
   return (
-    <section className="stack-wide">
-      <h1>Inventory Management</h1>
+    <section className="stack-wide admin-page">
       <label className="checkbox-label">
         <input
           type="checkbox"
@@ -29,33 +28,35 @@ export function InventoryManagementPage() {
         Show low stock only (≤ 10)
       </label>
 
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Category</th>
-            <th>Current Quantity</th>
-            <th>Update Quantity</th>
-          </tr>
-        </thead>
-        <tbody>
-          {visibleProducts.map((product) => (
-            <tr key={product.id}>
-              <td>{product.name}</td>
-              <td>{product.category}</td>
-              <td>{product.availableQuantity}</td>
-              <td>
-                <input
-                  type="number"
-                  min={0}
-                  value={product.availableQuantity}
-                  onChange={(event) => updateQuantity(product.id, Number(event.target.value))}
-                />
-              </td>
+      <div className="orders-table-wrap">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Current Quantity</th>
+              <th>Update Quantity</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {visibleProducts.map((product) => (
+              <tr key={product.id}>
+                <td>{product.name}</td>
+                <td>{product.category}</td>
+                <td>{product.availableQuantity}</td>
+                <td>
+                  <input
+                    type="number"
+                    min={0}
+                    value={product.availableQuantity}
+                    onChange={(event) => updateQuantity(product.id, Number(event.target.value))}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   )
 }

@@ -23,6 +23,7 @@ const mockOrderStore: Order[] = mockOrders.map((order) => ({
   ...order,
   items: order.items.map((item) => ({ ...item })),
 }))
+const defaultMockUserId = 'user-1'
 
 interface MyOrdersApiQuery {
   page: number
@@ -47,6 +48,30 @@ interface PlaceOrderMockContext {
   totalAmount: number
 }
 
+function normalizeUserToken(userId: string): string {
+  return userId.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8) || 'user'
+}
+
+function seedMockOrdersForUser(userId: string): void {
+  if (!userId) return
+
+  const alreadySeeded = mockOrderStore.some((order) => order.userId === userId)
+  if (alreadySeeded) return
+
+  const seedSource = mockOrders.filter((order) => order.userId === defaultMockUserId)
+  const token = normalizeUserToken(userId)
+
+  const clonedOrders = seedSource.map((order, index) => ({
+    ...order,
+    id: `${order.id}-${token}-${index + 1}`,
+    orderNumber: `${order.orderNumber}-${token.toUpperCase()}`,
+    userId,
+    items: order.items.map((item) => ({ ...item })),
+  }))
+
+  mockOrderStore.push(...clonedOrders)
+}
+
 function toMyOrdersApiQuery(query: MyOrdersQuery): MyOrdersApiQuery {
   const sortByMap: Record<NonNullable<MyOrdersQuery['sortBy']>, OrderSortByApi> = {
     newest: 'NEWEST',
@@ -57,7 +82,8 @@ function toMyOrdersApiQuery(query: MyOrdersQuery): MyOrdersApiQuery {
     page: query.page,
     size: query.size,
     status: query.status && query.status !== 'ALL' ? query.status : undefined,
-    sortBy: query.sortBy ? sortByMap[query.sortBy] : undefined,
+    // Keep default newest sorting server-side for compatibility with stricter backends.
+    sortBy: query.sortBy && query.sortBy !== 'newest' ? sortByMap[query.sortBy] : undefined,
   }
 }
 
@@ -75,8 +101,20 @@ function toAdminOrdersApiQuery(query: AdminOrdersQuery): AdminOrdersApiQuery {
     userId: query.userId,
     fromDate: query.fromDate,
     toDate: query.toDate,
-    sortBy: query.sortBy ? sortByMap[query.sortBy] : undefined,
+    // Keep default newest sorting server-side for compatibility with stricter backends.
+    sortBy: query.sortBy && query.sortBy !== 'newest' ? sortByMap[query.sortBy] : undefined,
   }
+}
+
+function shouldRetryWithoutSortBy(error: unknown, sortBy: unknown): boolean {
+  if (!sortBy || typeof sortBy !== 'string') return false
+
+  const status =
+    typeof error === 'object' && error !== null && 'response' in error
+      ? (error as { response?: { status?: number } }).response?.status
+      : undefined
+
+  return status === 400
 }
 
 function applyOrderQuery(
@@ -166,6 +204,9 @@ export const orderApi = {
     mockContext?: PlaceOrderMockContext,
   ): Promise<ApiSuccessResponse<Order>> {
     if (apiConfig.useMockApi) {
+      const resolvedUserId = mockContext?.userId ?? defaultMockUserId
+      seedMockOrdersForUser(resolvedUserId)
+
       const now = new Date().toISOString()
       const sequence = String(mockOrderStore.length + 1).padStart(3, '0')
       const monthKey = new Date().toISOString().slice(0, 7).replace('-', '')
@@ -173,7 +214,7 @@ export const orderApi = {
       const order: Order = {
         id: `ord-${mockOrderStore.length + 1}`,
         orderNumber: `FRZ-${monthKey}-${sequence}`,
-        userId: mockContext?.userId ?? 'user-1',
+        userId: resolvedUserId,
         status: 'PLACED',
         totalAmount: mockContext?.totalAmount ?? 0,
         deliveryAddress: payload.deliveryAddress,
@@ -195,13 +236,27 @@ export const orderApi = {
     const apiQuery = toMyOrdersApiQuery(query)
 
     if (apiConfig.useMockApi) {
-      return withMockLatency(applyOrderQuery([...mockOrderStore], query.userId, apiQuery))
+      const resolvedUserId = query.userId ?? defaultMockUserId
+      seedMockOrdersForUser(resolvedUserId)
+      return withMockLatency(applyOrderQuery([...mockOrderStore], resolvedUserId, apiQuery))
     }
 
-    const response = await privateApi.get<ApiSuccessResponse<PaginatedResult<Order>>>('/api/orders', {
-      params: apiQuery,
-    })
-    return response.data
+    try {
+      const response = await privateApi.get<ApiSuccessResponse<PaginatedResult<Order>>>('/api/orders', {
+        params: apiQuery,
+      })
+      return response.data
+    } catch (error) {
+      if (!shouldRetryWithoutSortBy(error, apiQuery.sortBy)) {
+        throw error
+      }
+
+      const { sortBy: _ignoredSortBy, ...fallbackParams } = apiQuery
+      const fallback = await privateApi.get<ApiSuccessResponse<PaginatedResult<Order>>>('/api/orders', {
+        params: fallbackParams,
+      })
+      return fallback.data
+    }
   },
 
   async listAllOrders(query: AdminOrdersQuery): Promise<ApiSuccessResponse<PaginatedResult<Order>>> {
@@ -211,10 +266,22 @@ export const orderApi = {
       return withMockLatency(applyAdminOrderQuery([...mockOrderStore], apiQuery))
     }
 
-    const response = await privateApi.get<ApiSuccessResponse<PaginatedResult<Order>>>('/api/admin/orders', {
-      params: apiQuery,
-    })
-    return response.data
+    try {
+      const response = await privateApi.get<ApiSuccessResponse<PaginatedResult<Order>>>('/api/admin/orders', {
+        params: apiQuery,
+      })
+      return response.data
+    } catch (error) {
+      if (!shouldRetryWithoutSortBy(error, apiQuery.sortBy)) {
+        throw error
+      }
+
+      const { sortBy: _ignoredSortBy, ...fallbackParams } = apiQuery
+      const fallback = await privateApi.get<ApiSuccessResponse<PaginatedResult<Order>>>('/api/admin/orders', {
+        params: fallbackParams,
+      })
+      return fallback.data
+    }
   },
 
   async updateOrderStatus(orderId: string, status: OrderStatus): Promise<ApiSuccessResponse<Order>> {

@@ -6,6 +6,15 @@ import { PaginationControls } from '../components/PaginationControls'
 import { useAsyncData } from '../hooks/useAsyncData'
 import type { OrderStatus } from '../types/order'
 
+const orderStatusClassName: Record<OrderStatus, string> = {
+  PLACED: 'status-placed',
+  CONFIRMED: 'status-confirmed',
+  PREPARING: 'status-preparing',
+  DISPATCHED: 'status-dispatched',
+  DELIVERED: 'status-delivered',
+  CANCELLED: 'status-cancelled',
+}
+
 export function MyOrdersPage() {
   const { auth } = useAuth()
   const [status, setStatus] = useState<'ALL' | OrderStatus>('ALL')
@@ -34,10 +43,8 @@ export function MyOrdersPage() {
   const pagedOrders = data?.items ?? []
 
   return (
-    <section className="stack-wide">
-      <h1>My Orders</h1>
-
-      <div className="toolbar-grid">
+    <section className="stack-wide orders-page">
+      <div className="toolbar-grid orders-toolbar">
         <label>
           Filter Status
           <select
@@ -72,30 +79,34 @@ export function MyOrdersPage() {
         isEmpty={!loading && !error && pagedOrders.length === 0}
         emptyMessage="No orders found for selected status."
       >
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Order Number</th>
-              <th>Status</th>
-              <th>Payment</th>
-              <th>Total</th>
-              <th>Created At</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagedOrders.map((order) => (
-              <tr key={order.id}>
-                <td>{order.orderNumber}</td>
-                <td>{order.status}</td>
-                <td>
-                  {order.paymentMethod} ({order.paymentStatus})
-                </td>
-                <td>₹{order.totalAmount}</td>
-                <td>{new Date(order.createdAt).toLocaleString()}</td>
+        <div className="orders-table-wrap">
+          <table className="table orders-table">
+            <thead>
+              <tr>
+                <th>Order Number</th>
+                <th>Status</th>
+                <th>Payment</th>
+                <th>Total</th>
+                <th>Created At</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {pagedOrders.map((order) => (
+                <tr key={order.id}>
+                  <td>{order.orderNumber}</td>
+                  <td>
+                    <span className={`order-status-chip ${orderStatusClassName[order.status]}`}>{order.status}</span>
+                  </td>
+                  <td>
+                    {order.paymentMethod} ({order.paymentStatus})
+                  </td>
+                  <td>₹{order.totalAmount}</td>
+                  <td>{new Date(order.createdAt).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </AsyncState>
 
       <PaginationControls currentPage={currentPage} totalPages={totalPages} onChange={setPage} />

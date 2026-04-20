@@ -53,8 +53,7 @@ export function DashboardPage() {
   }, [ordersPage?.items])
 
   return (
-    <section className="stack-wide">
-      <h1>Admin Dashboard</h1>
+    <section className="stack-wide admin-page">
       <div className="toolbar-grid">
         <label>
           From
@@ -83,7 +82,7 @@ export function DashboardPage() {
         </div>
 
         <h2>Top-Selling Juices</h2>
-        <ul>
+        <ul className="simple-list-card">
           {summary.topProducts.map((item) => (
             <li key={item.productId}>
               {item.name} - {item.qty} bottles sold
@@ -92,7 +91,7 @@ export function DashboardPage() {
         </ul>
 
         <h2>Low Inventory Alerts</h2>
-        <ul>
+        <ul className="simple-list-card">
           {summary.lowStock.map((item) => (
             <li key={item.id}>
               {item.name} - only {item.availableQuantity} left

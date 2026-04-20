@@ -1,25 +1,6 @@
 export function AboutPage() {
   return (
     <section className="stack-wide about-page">
-      <div className="about-hero card">
-        <p className="hero-kicker">Our Juice Promise</p>
-        <h1>About Fruzoos</h1>
-        <p>
-          Fruzoos is a fresh juice storefront focused on natural ingredients, balanced recipes,
-          and reliable doorstep delivery.
-        </p>
-      </div>
-
-      <h2>What We Believe</h2>
-      <p>
-        Every bottle should taste fresh, feel light, and deliver clean fruit nutrition without
-        artificial colors or syrups.
-      </p>
-      <p>
-        Our team curates seasonal produce, presses in small batches, and keeps pricing transparent
-        so healthy juice can fit into everyday routines.
-      </p>
-
       <div className="card-grid">
         <article className="card">
           <h3>Fresh Sourcing</h3>

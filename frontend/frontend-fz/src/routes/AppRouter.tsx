@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { Layout } from '../components/Layout'
 import { ProtectedRoute } from './ProtectedRoute'
 import { HomePage } from '../pages/HomePage'
+import { CatalogPage } from '../pages/CatalogPage'
 import { ProductDetailPage } from '../pages/ProductDetailPage'
 import { CartPage } from '../pages/CartPage'
 import { CheckoutPage } from '../pages/CheckoutPage'
@@ -22,12 +23,16 @@ export function AppRouter() {
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
+        <Route path="/catalog" element={<CatalogPage />} />
         <Route path="/products/:id" element={<ProductDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
 
-        <Route element={<ProtectedRoute />}>
+        <Route element={<ProtectedRoute allowedRoles={['USER']} />}>
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/orders" element={<MyOrdersPage />} />
+        </Route>
+
+        <Route element={<ProtectedRoute />}>
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
 

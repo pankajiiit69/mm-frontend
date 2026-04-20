@@ -27,7 +27,7 @@ export function LoginPage() {
       await login({ email, password })
       navigate('/')
     } catch {
-      setError('Login failed. Please verify credentials and try again.')
+      setError('Sign in failed. Please verify credentials and try again.')
     }
   }
 
@@ -43,16 +43,16 @@ export function LoginPage() {
       await socialLogin('google', idToken)
       navigate('/')
     } catch {
-      setError('Google login failed. Please try again.')
+      setError('Google sign in failed. Please try again.')
     }
   }
 
   return (
-    <section>
-      <h1>Login</h1>
-      <p>Try seeded credentials: user@fruzoos.local / password123</p>
-      <p>Social login calls API: POST /api/auth/social/{'{provider}'} with idToken.</p>
-      <form onSubmit={onSubmit} className="stack">
+    <section className="stack-wide auth-page">
+      <form onSubmit={onSubmit} className="stack auth-form-card">
+        <h1 className="auth-card-title">Sign In</h1>
+        <p className="auth-card-subtitle">Sign in to continue your fresh juice orders and delivery tracking.</p>
+
         <label>
           Email
           <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
@@ -63,14 +63,17 @@ export function LoginPage() {
         </label>
         <button type="submit">Sign In</button>
         {hasGoogleClientId && (
-          <div className="stack">
+          <div className="google-auth-wrap">
             <GoogleLogin
               onSuccess={(response) => void onGoogleSuccess(response)}
-              onError={() => setError('Google login failed.')}
+              onError={() => setError('Google sign in failed.')}
             />
           </div>
         )}
-        <Link to="/reset-password">Forgot password?</Link>
+        <div className="inline-actions">
+          <Link to="/reset-password">Forgot password?</Link>
+          <Link to="/register">Create account</Link>
+        </div>
         <FieldError message={error} />
       </form>
     </section>
