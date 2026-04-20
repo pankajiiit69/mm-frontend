@@ -1,4 +1,6 @@
 import type { Product } from '../types/product'
+import bottelOrange from '../assets/images/BottelOrange.png'
+import bottelMosambi from '../assets/images/BottelMosambi.png'
 
 export const mockProducts: Product[] = [
   {
@@ -10,7 +12,7 @@ export const mockProducts: Product[] = [
     price: 120,
     availableQuantity: 42,
     isActive: true,
-    imageUrl: 'https://images.unsplash.com/photo-1600271886742-f049cd5bba3f?w=800',
+    imageUrl: bottelOrange,
     category: 'CITRUS',
     createdAt: '2026-03-01T10:00:00Z',
   },
@@ -23,7 +25,7 @@ export const mockProducts: Product[] = [
     price: 90,
     availableQuantity: 18,
     isActive: true,
-    imageUrl: 'https://images.unsplash.com/photo-1589733955941-5eeaf752f6dd?w=800',
+    imageUrl: bottelMosambi,
     category: 'CITRUS',
     createdAt: '2026-03-02T09:00:00Z',
   },
@@ -36,7 +38,7 @@ export const mockProducts: Product[] = [
     price: 130,
     availableQuantity: 30,
     isActive: true,
-    imageUrl: 'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=800',
+    imageUrl: bottelOrange,
     category: 'SEASONAL',
     createdAt: '2026-03-04T08:00:00Z',
   },
@@ -49,7 +51,7 @@ export const mockProducts: Product[] = [
     price: 170,
     availableQuantity: 10,
     isActive: true,
-    imageUrl: 'https://images.unsplash.com/photo-1587735243615-c03f25aaff15?w=800',
+    imageUrl: bottelOrange,
     category: 'TROPICAL',
     createdAt: '2026-03-05T12:00:00Z',
   },
@@ -62,7 +64,7 @@ export const mockProducts: Product[] = [
     price: 150,
     availableQuantity: 0,
     isActive: true,
-    imageUrl: 'https://images.unsplash.com/photo-1622597467836-f3285f2131b8?w=800',
+    imageUrl: bottelMosambi,
     category: 'MIXED',
     createdAt: '2026-03-06T12:00:00Z',
   },
@@ -75,7 +77,7 @@ export const mockProducts: Product[] = [
     price: 140,
     availableQuantity: 7,
     isActive: true,
-    imageUrl: 'https://images.unsplash.com/photo-1610970881699-44a5587cabec?w=800',
+    imageUrl: bottelMosambi,
     category: 'DETOX',
     createdAt: '2026-03-07T10:00:00Z',
   },

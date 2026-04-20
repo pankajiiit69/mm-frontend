@@ -6,9 +6,8 @@ import { PaginationControls } from '../components/PaginationControls'
 import { useCart } from '../hooks/useCart'
 import { useAsyncData } from '../hooks/useAsyncData'
 import type { ProductCategory } from '../types/product'
-import citrusSplash from '../assets/images/citrus-splash.svg'
-import pineappleSlice from '../assets/images/pineapple-slice.svg'
-import kiwiCut from '../assets/images/kiwi-cut.svg'
+import bottelOrange from '../assets/images/BottelOrange.png'
+import bottelMosambi from '../assets/images/BottelMosambi.png'
 
 const categoryAccent: Record<ProductCategory, { label: string; icon: string; toneClass: string }> = {
   CITRUS: { label: 'Citrus Boost', icon: 'CT', toneClass: 'citrus' },
@@ -86,9 +85,9 @@ export function HomePage() {
           </div>
         </div>
         <div className="hero-visual" aria-hidden="true">
-          <img src={citrusSplash} alt="" className="hero-fruit hero-fruit-one" />
-          <img src={pineappleSlice} alt="" className="hero-fruit hero-fruit-two" />
-          <img src={kiwiCut} alt="" className="hero-fruit hero-fruit-three" />
+          <img src={bottelOrange} alt="" className="hero-fruit hero-fruit-one" />
+          <img src={bottelMosambi} alt="" className="hero-fruit hero-fruit-two" />
+          <img src={bottelOrange} alt="" className="hero-fruit hero-fruit-three" />
         </div>
       </div>
 
