@@ -1,7 +1,2 @@
-/dist
-/build
-
-# ── Dependencies ──────────────────────────────────────────────────────────────
-/node_modules
-# npm registry config (machine-specific, do not commit)
-.npmrc
+# Inherits common ignore rules from repository root .gitignore.
+# Keep this file for any future auth-core-specific patterns.
