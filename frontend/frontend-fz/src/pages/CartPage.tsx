@@ -57,9 +57,9 @@ export function CartPage() {
         <strong>Subtotal:</strong> ₹{subtotal}
       </p>
 
-      <div className="inline-actions">
-        <button onClick={() => void clearCart()}>Clear Cart</button>
-        <Link to="/checkout">Proceed to Checkout</Link>
+      <div className="inline-actions cart-actions">
+        <button className="cart-clear-action" onClick={() => void clearCart()}>Clear Cart</button>
+        <Link className="cart-checkout-action" to="/checkout">Proceed to Checkout</Link>
       </div>
     </section>
   )

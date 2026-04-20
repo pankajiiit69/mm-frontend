@@ -4,6 +4,15 @@ import { productApi } from '../api/productApi'
 import { AsyncState } from '../components/AsyncState'
 import { useCart } from '../hooks/useCart'
 import { useAsyncData } from '../hooks/useAsyncData'
+import type { ProductCategory } from '../types/product'
+
+const categoryToneClass: Record<ProductCategory, string> = {
+  CITRUS: 'citrus',
+  TROPICAL: 'tropical',
+  MIXED: 'mixed',
+  DETOX: 'detox',
+  SEASONAL: 'seasonal',
+}
 
 export function ProductDetailPage() {
   const { id } = useParams()
@@ -33,15 +42,27 @@ export function ProductDetailPage() {
   const canAdd = product.availableQuantity > 0 && quantity > 0 && quantity <= product.availableQuantity
 
   return (
-    <section className="stack-wide">
-      <h1>{product.name}</h1>
-      <p>{product.description}</p>
-      <p>
-        {product.fruitType} • {product.category} • {product.bottleSizeMl}ml
-      </p>
-      <p>
-        Price: ₹{product.price} • Available Quantity: {product.availableQuantity}
-      </p>
+    <section className={`stack-wide product-card-${categoryToneClass[product.category]}`}>
+      <div className="detail-hero">
+        <img src={product.imageUrl} alt={product.name} className="detail-media" loading="eager" />
+        <div className="stack">
+          <h1>{product.name}</h1>
+          <p>{product.description}</p>
+          <p>
+            {product.fruitType} • {product.category} • {product.bottleSizeMl}ml
+          </p>
+          <div className="detail-meta-grid">
+            <p>
+              <strong>Price</strong>
+              <br />₹{product.price}
+            </p>
+            <p>
+              <strong>Availability</strong>
+              <br />{product.availableQuantity}
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div className="inline-actions">
         <label>

@@ -6,6 +6,17 @@ import { PaginationControls } from '../components/PaginationControls'
 import { useCart } from '../hooks/useCart'
 import { useAsyncData } from '../hooks/useAsyncData'
 import type { ProductCategory } from '../types/product'
+import citrusSplash from '../assets/images/citrus-splash.svg'
+import pineappleSlice from '../assets/images/pineapple-slice.svg'
+import kiwiCut from '../assets/images/kiwi-cut.svg'
+
+const categoryAccent: Record<ProductCategory, { label: string; icon: string; toneClass: string }> = {
+  CITRUS: { label: 'Citrus Boost', icon: 'CT', toneClass: 'citrus' },
+  TROPICAL: { label: 'Tropical Splash', icon: 'TR', toneClass: 'tropical' },
+  MIXED: { label: 'Fruit Mix', icon: 'MX', toneClass: 'mixed' },
+  DETOX: { label: 'Detox Blend', icon: 'DX', toneClass: 'detox' },
+  SEASONAL: { label: 'Seasonal Pick', icon: 'SN', toneClass: 'seasonal' },
+}
 
 export function HomePage() {
   const { addItem } = useCart()
@@ -60,9 +71,25 @@ export function HomePage() {
 
   return (
     <section className="stack-wide">
-      <div>
-        <h1>Fresh Juice Catalog</h1>
-        <p>Browse by category, filter by availability, and sort by price or newest.</p>
+      <div className="home-hero">
+        <div className="home-hero-content">
+          <p className="hero-kicker">Cold Pressed. Same Day Fresh.</p>
+          <h1 className="hero-title">Fresh Juice Catalog</h1>
+          <p className="hero-subtitle">
+            Discover vitamin-rich blends made from real fruits, with no artificial flavors and no
+            added sugar.
+          </p>
+          <div className="hero-badges" aria-label="service highlights">
+            <span className="hero-badge">Farm Fresh Fruits</span>
+            <span className="hero-badge">Freshly Pressed Daily</span>
+            <span className="hero-badge">Quick Local Delivery</span>
+          </div>
+        </div>
+        <div className="hero-visual" aria-hidden="true">
+          <img src={citrusSplash} alt="" className="hero-fruit hero-fruit-one" />
+          <img src={pineappleSlice} alt="" className="hero-fruit hero-fruit-two" />
+          <img src={kiwiCut} alt="" className="hero-fruit hero-fruit-three" />
+        </div>
       </div>
 
       <div className="toolbar-grid">
@@ -126,13 +153,22 @@ export function HomePage() {
       >
         <div className="card-grid">
           {pagedProducts.map((product) => (
-            <article key={product.id} className="card">
+            <article key={product.id} className={`card product-card product-card-${categoryAccent[product.category].toneClass}`}>
+              <div className="product-card-media">
+                <img src={product.imageUrl} alt={product.name} className="product-card-image" loading="lazy" />
+                <span className={`product-category-chip product-category-chip-${categoryAccent[product.category].toneClass}`}>
+                  <span aria-hidden="true">{categoryAccent[product.category].icon}</span>{' '}
+                  {categoryAccent[product.category].label}
+                </span>
+              </div>
               <h3>{product.name}</h3>
               <p>{product.description}</p>
               <p>
                 {product.bottleSizeMl}ml • ₹{product.price}
               </p>
-              <p>Stock: {product.availableQuantity}</p>
+              <p className={product.availableQuantity > 0 ? 'product-stock-chip product-stock-chip-in' : 'product-stock-chip product-stock-chip-out'}>
+                Stock: {product.availableQuantity > 0 ? `${product.availableQuantity} available` : 'Out of stock'}
+              </p>
               <div className="inline-actions">
                 <Link to={`/products/${product.id}`}>Details</Link>
                 <button
