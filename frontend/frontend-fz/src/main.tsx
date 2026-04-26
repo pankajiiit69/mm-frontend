@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import { BrowserRouter } from 'react-router-dom'
+import { HashRouter } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider } from '@fruzoos/auth-core'
 import { CartProvider } from './context/CartContext.tsx'
@@ -12,13 +12,13 @@ const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
 const hasGoogleClientId = Boolean(googleClientId.trim())
 
 const appTree = (
-  <BrowserRouter>
+  <HashRouter>
     <AuthProvider authClient={authClient} storage={storage} storageKey={AUTH_KEY}>
       <CartProvider>
         <App />
       </CartProvider>
     </AuthProvider>
-  </BrowserRouter>
+  </HashRouter>
 )
 
 createRoot(document.getElementById('root')!).render(
